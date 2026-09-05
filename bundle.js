@@ -2744,7 +2744,7 @@ const y1=$c;
 async function x1(){
   const result = {};
   const defaults = [
-    { key: "upi_id", value: "merilocalbazaar@oksbi", is_public: true },
+    { key: "upi_id", value: "grejamarak@oksbi", is_public: true },
     { key: "payment_qr_code", value: "", is_public: true },
     { key: "payment_instructions", value: "1. Open any UPI app (GPay, PhonePe, Paytm). 2. Scan the QR code or pay to the UPI ID shown. 3. Enter the exact amount for your chosen plan. 4. After payment, copy the UTR/Transaction ID. 5. Come back and submit the UTR to activate your PRO membership.", is_public: true },
     { key: "tutorial_video_url", value: "", is_public: true },
@@ -4117,7 +4117,7 @@ async function X1(userId) {
 }
 async function Z1(e,t){const n=e.name.split(".").pop()||"jpg",r=`avatars/${t}-${Date.now()}.${n}`,{data:s,error:i}=await L.storage.from("media").upload(r,e,{contentType:e.type,upsert:!0});if(i)throw i;const{data:l}=L.storage.from("media").getPublicUrl(s.path);return l.publicUrl}async function ej(e,t){const n=e.name.split(".").pop()||"jpg",r=`proofs/${t}-${Date.now()}.${n}`,{data:s,error:i}=await L.storage.from("media").upload(r,e,{contentType:e.type,upsert:!1});if(i)throw i;const{data:l}=L.storage.from("media").getPublicUrl(s.path);return l.publicUrl}async function tj(){
   const n = {
-    upi_id: "merilocalbazaar@oksbi",
+    upi_id: "grejamarak@oksbi",
     payment_qr_code: "",
     payment_instructions: "1. Open any UPI app (GPay, PhonePe, Paytm). 2. Scan the QR code or pay to the UPI ID shown. 3. Enter the exact amount for your chosen plan. 4. After payment, copy the UTR/Transaction ID. 5. Come back and submit the UTR to activate your PRO membership.",
     tutorial_video_title: "How to pay for PRO membership",
@@ -4193,7 +4193,7 @@ async function Z1(e,t){const n=e.name.split(".").pop()||"jpg",r=`avatars/${t}-${
     if(typeof window!=="undefined"){ window.addEventListener("app_settings_updated", loadPay); }
     return ()=>{ if(typeof window!=="undefined"){ window.removeEventListener("app_settings_updated", loadPay); } };
   },[]);
-  const boostUpiId = (paySettings.upi_id || "merilocalbazaar@oksbi").trim();
+  const boostUpiId = (paySettings.upi_id || "grejamarak@oksbi").trim();
   const boostQrSrc = (paySettings.payment_qr_code || paySettings.upi_qr_code) ? (paySettings.payment_qr_code || paySettings.upi_qr_code) : ("https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent("upi://pay?pa=" + boostUpiId + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing%20Boost"));
 
 
@@ -4547,7 +4547,7 @@ a.jsxs("div",{className:"card divide-y divide-gray-50",children:[a.jsx(qn,{icon:
     if(typeof window!=="undefined"){ window.addEventListener("app_settings_updated", loadPay); }
     return ()=>{ if(typeof window!=="undefined"){ window.removeEventListener("app_settings_updated", loadPay); } };
   },[]);
-  const boostUpiId = (paySettings.upi_id || "merilocalbazaar@oksbi").trim();
+  const boostUpiId = (paySettings.upi_id || "grejamarak@oksbi").trim();
   const boostQrSrc = (paySettings.payment_qr_code || paySettings.upi_qr_code) ? (paySettings.payment_qr_code || paySettings.upi_qr_code) : ("https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent("upi://pay?pa=" + boostUpiId + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing%20Boost"));
 
 
@@ -4762,10 +4762,10 @@ function lj(){
         O = o.some(C => C.status === "pending"),
         M = h.tutorial_active === "true" || h.tutorial_active === true || (h.tutorial_active !== "false" && h.tutorial_active !== false && !!h.tutorial_video_url),
         G = h.tutorial_video_url || "",
-        upiId = ((h && h.upi_id !== undefined && h.upi_id !== null && h.upi_id !== "") ? h.upi_id : ((typeof window!=="undefined" && (localStorage.getItem("settings_upi_id") || localStorage.getItem("app_upi_id"))) ? (localStorage.getItem("settings_upi_id") || localStorage.getItem("app_upi_id")) : "merilocalbazaar@oksbi")).trim(), paymentQrCode = ((h && (h.payment_qr_code || h.upi_qr_code)) ? (h.payment_qr_code || h.upi_qr_code) : ((typeof window!=="undefined" && (localStorage.getItem("settings_payment_qr_code") || localStorage.getItem("app_payment_qr_code"))) ? (localStorage.getItem("settings_payment_qr_code") || localStorage.getItem("app_payment_qr_code")) : "")).trim();
+        upiId = ((h && h.upi_id !== undefined && h.upi_id !== null && h.upi_id !== "") ? h.upi_id : ((typeof window!=="undefined" && (localStorage.getItem("settings_upi_id") || localStorage.getItem("app_upi_id"))) ? (localStorage.getItem("settings_upi_id") || localStorage.getItem("app_upi_id")) : "grejamarak@oksbi")).trim(), paymentQrCode = ((h && (h.payment_qr_code || h.upi_qr_code)) ? (h.payment_qr_code || h.upi_qr_code) : ((typeof window!=="undefined" && (localStorage.getItem("settings_payment_qr_code") || localStorage.getItem("app_payment_qr_code"))) ? (localStorage.getItem("settings_payment_qr_code") || localStorage.getItem("app_payment_qr_code")) : "")).trim();
 
   const getUpiUrl = (app, amount, planName) => {
-    const cleanUpi = (upiId || "merilocalbazaar@oksbi").trim();
+    const cleanUpi = (upiId || "merilocalbazaar@upi").trim();
     const payeeName = encodeURIComponent("Meri Local Bazaar");
     const cleanNote = ((planName || "PRO").replace(/[^a-zA-Z0-9 ]/g, "") + " Membership").trim();
     const note = encodeURIComponent(cleanNote);
@@ -4786,7 +4786,7 @@ function lj(){
     if (e && e.preventDefault) {
       e.preventDefault();
     }
-    const cleanUpi = (upiId || "merilocalbazaar@oksbi").trim();
+    const cleanUpi = (upiId || "merilocalbazaar@upi").trim();
     const payeeName = encodeURIComponent("Meri Local Bazaar");
     const cleanNote = ((planName || "PRO").replace(/[^a-zA-Z0-9 ]/g, "") + " Membership").trim();
     const note = encodeURIComponent(cleanNote);
@@ -5158,7 +5158,7 @@ function lj(){
                 a.jsx("div", {
                   className: "p-2 bg-white rounded-xl border-2 border-primary-200 shadow-sm inline-block",
                   children: a.jsx("img", {
-                    src: paymentQrCode || ("https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=" + encodeURIComponent("upi://pay?pa=" + (upiId || "merilocalbazaar@oksbi").trim() + "&pn=" + encodeURIComponent("Meri Local Bazaar") + "&am=" + (w.price || "50") + "&cu=INR&tn=" + encodeURIComponent((w.name || "PRO").replace(/[^a-zA-Z0-9 ]/g, "") + " Membership"))),
+                    src: paymentQrCode || ("https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=" + encodeURIComponent("upi://pay?pa=" + (upiId || "merilocalbazaar@upi").trim() + "&pn=" + encodeURIComponent("Meri Local Bazaar") + "&am=" + (w.price || "50") + "&cu=INR&tn=" + encodeURIComponent((w.name || "PRO").replace(/[^a-zA-Z0-9 ]/g, "") + " Membership"))),
                     alt: "UPI Payment QR Code",
                     className: "w-44 h-44 object-contain rounded-lg block mx-auto"
                   })
@@ -8279,7 +8279,7 @@ function gj(){const e=he(),{user:t}=Ae(),[n,r]=m.useState([]),[s,i]=m.useState(!
   };
 
   const activeCustomQr = (o.payment_qr_code || o.upi_qr_code || "").trim();
-  const defaultGeneratedQr = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=" + encodeURIComponent("upi://pay?pa=" + ((o.upi_id || "merilocalbazaar@oksbi").trim()) + "&pn=" + encodeURIComponent("Meri Local Bazaar"));
+  const defaultGeneratedQr = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=" + encodeURIComponent("upi://pay?pa=" + ((o.upi_id || "grejamarak@oksbi").trim()) + "&pn=" + encodeURIComponent("Meri Local Bazaar"));
 
   return r ? a.jsx("div", {
     className: "flex justify-center py-12",
@@ -8353,7 +8353,7 @@ function gj(){const e=he(),{user:t}=Ae(),[n,r]=m.useState([]),[s,i]=m.useState(!
                   }),
                   a.jsx("p", {
                     className: "text-[11px] text-gray-500",
-                    children: activeCustomQr ? "Users currently scan this custom uploaded QR code" : ("Default UPI QR: " + (o.upi_id || "merilocalbazaar@oksbi"))
+                    children: activeCustomQr ? "Users currently scan this custom uploaded QR code" : ("Default UPI QR: " + (o.upi_id || "grejamarak@oksbi"))
                   }),
                   activeCustomQr && a.jsx("button", {
                     type: "button",

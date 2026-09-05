@@ -8598,19 +8598,31 @@ class ErrorBoundary extends m.Component{
   });
 }
 
+let _mlbMountedRoot = null;
 function mountApp(){
   try{
     const rootEl = document.getElementById('root');
-    if(rootEl){
-      Mf(rootEl).render(a.jsx(_j,{}));
+    if(rootEl && !_mlbMountedRoot){
+      _mlbMountedRoot = Mf(rootEl);
+      _mlbMountedRoot.render(a.jsx(_j,{}));
     }
   }catch(err){
     console.error('Mount error:', err);
+    try {
+      const rootEl = document.getElementById('root');
+      if (rootEl && !_mlbMountedRoot) {
+        _mlbMountedRoot = Mf(rootEl);
+        _mlbMountedRoot.render(a.jsx(_j,{}));
+      }
+    } catch(e){}
   }
 }
-
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', mountApp);
-} else {
-  mountApp();
 }
+if (typeof window !== "undefined") {
+  window.addEventListener('load', mountApp);
+}
+mountApp();
+setTimeout(mountApp, 20);
+setTimeout(mountApp, 100);

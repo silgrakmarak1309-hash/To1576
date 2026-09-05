@@ -255,200 +255,7 @@ async function bindDeviceEmailAsync(email) {
 function bindDeviceEmail(email) {
   bindDeviceEmailAsync(email).catch(()=>{});
 }
-function bw({children:e}){
-  const [t,n] = m.useState(null),
-        [r,s] = m.useState(null),
-        [i,l] = m.useState(null),
-        [o,c] = m.useState(!0),
-        userRef = m.useRef(null),
-        u = m.useCallback(async w => {
-          try {
-            let p_data = null;
-            try {
-              const { data: j, error: f } = await L.from("profiles").select("*").eq("id", w).maybeSingle();
-              if (!f && j) p_data = j;
-            } catch(err) {}
-            
-            try {
-              const { data: u_auth } = await L.auth.getUser();
-              const u_email = u_auth?.user?.email;
-              const u_name = u_auth?.user?.user_metadata?.name || u_email?.split('@')[0] || 'User';
-              const isAdminUser = isUserAdmin({ email: u_email });
-              if (!p_data) {
-                p_data = {
-                  id: w,
-                  email: u_email,
-                  name: u_name,
-                  role: isAdminUser ? 'super_admin' : 'user',
-                  account_status: 'active',
-                  status: 'active',
-                  is_pro: isAdminUser,
-                  pro_status: isAdminUser ? 'active' : 'inactive',
-                  created_at: new Date().toISOString()
-                };
-                try { await L.from('profiles').upsert(p_data); } catch(err) {}
-              } else {
-                if (isAdminUser) {
-                  p_data = { ...p_data, role: 'super_admin', is_pro: !0, pro_status: 'active' };
-                  try { await L.from('profiles').update({ role: 'super_admin', is_pro: !0, pro_status: 'active' }).eq('id', w); } catch(err) {}
-                }
-              }
-            } catch(e) {}
-
-            if (p_data) {
-              try {
-                const syncState = await getCloudSyncState(true);
-                const userOverrides = syncState.userStatusOverrides || {};
-                const cleanEmail = (p_data.email || "").trim().toLowerCase();
-                const uCloud = userOverrides[p_data.id] || (cleanEmail ? userOverrides[cleanEmail] : null);
-                if (uCloud) {
-                  if (uCloud.account_status !== undefined) { p_data.account_status = uCloud.account_status; p_data.status = uCloud.account_status; }
-                  if (uCloud.status !== undefined) { p_data.status = uCloud.status; p_data.account_status = uCloud.status; }
-                  if (uCloud.is_pro !== undefined) p_data.is_pro = uCloud.is_pro;
-                  if (uCloud.pro_status !== undefined) p_data.pro_status = uCloud.pro_status;
-                  if (uCloud.pro_expires_at) p_data.pro_expires_at = uCloud.pro_expires_at;
-                  if (uCloud.approved_expiry_date) p_data.approved_expiry_date = uCloud.approved_expiry_date;
-                }
-              } catch(err) {}
-
-              try {
-                localStorage.setItem("mlb_saved_profile_" + w, JSON.stringify(p_data));
-              } catch(err) {}
-            }
-            l(p_data);
-          } catch(b) {
-            console.error("Error fetching profile:", b);
-          } finally {
-            c(!1);
-          }
-        }, []);
-
-  m.useEffect(() => {
-    userRef.current = t;
-  }, [t]);
-
-  m.useEffect(() => {
-    L.auth.getSession().then(({data:{session:w}})=>{
-      s(w);
-      const j = w?.user ?? null;
-      n(j);
-      if (j) {
-        u(j.id);
-      } else {
-        l(null);
-        c(!1);
-      }
-    });
-
-    const {data:{subscription:w}} = L.auth.onAuthStateChange((j,f)=>{
-      s(f);
-      const g = f?.user ?? null;
-      n(g);
-      if (g) {
-        u(g.id);
-      } else {
-        l(null);
-        c(!1);
-      }
-    });
-
-    return () => w.unsubscribe();
-  }, [u]);
-
-  const d = m.useCallback(async () => {
-    const current = userRef.current;
-    if (current?.id) {
-      await u(current.id);
-    }
-  }, [u]);
-
-  m.useEffect(() => {
-    const handleStatusSync = (ev) => {
-      const current = userRef.current;
-      if (!current?.id) return;
-      if (ev && ev.detail) {
-        const dUser = ev.detail.user_id;
-        const dEmail = ev.detail.email;
-        if (dUser === current.id || (dEmail && current.email && dEmail.toLowerCase() === current.email.toLowerCase())) {
-          u(current.id);
-          return;
-        }
-      }
-      u(current.id);
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("user_status_updated", handleStatusSync);
-      window.addEventListener("user_status_changed", handleStatusSync);
-      window.addEventListener("storage", handleStatusSync);
-    }
-
-    const syncTimer = setInterval(() => {
-      const current = userRef.current;
-      if (current?.id) {
-        if (typeof document !== "undefined" && document.hidden) return;
-        u(current.id);
-      }
-    }, 6000);
-
-    return () => {
-      clearInterval(syncTimer);
-      if (typeof window !== "undefined") {
-        window.removeEventListener("user_status_updated", handleStatusSync);
-        window.removeEventListener("user_status_changed", handleStatusSync);
-        window.removeEventListener("storage", handleStatusSync);
-      }
-    };
-  }, [u]);
-
-  const h = async (w,j,f,g) => {
-    const {data:y, error:k} = await L.auth.signUp({
-      email: w,
-      password: j,
-      options: {
-        data: { name: f, phone: g }
-      }
-    });
-    if (k) throw k;
-    return y;
-  };
-
-  const p = async (w,j) => {
-    const {data:f, error:g} = await L.auth.signInWithPassword({ email: w, password: j });
-    if (g) throw g;
-    return f;
-  };
-
-  const v = async () => {
-    try {
-      await L.auth.signOut();
-    } catch(err) {}
-    l(null);
-    n(null);
-    s(null);
-  };
-
-  const x = async w => {
-    const {error:j} = await L.auth.resetPasswordForEmail(w);
-    if (j) throw j;
-  };
-
-  return a.jsx(Tp.Provider, {
-    value: {
-      user: t,
-      session: r,
-      profile: i,
-      loading: o,
-      signUp: h,
-      signIn: p,
-      signOut: v,
-      resetPassword: x,
-      refreshProfile: d
-    },
-    children: e
-  });
-}
-function Ae(){const e=m.useContext(Tp);if(!e)throw new Error("useAuth must be used within AuthProvider");return e}/**
+function bw({children:e}){  const[t,n]=m.useState(null),  [r,s]=m.useState(null),  [i,l]=m.useState(null),  [o,c]=m.useState(!0),  userRef=m.useRef(null),  u=m.useCallback(async w=>{    try {      let p_data=null;      try{const cached=localStorage.getItem("mlb_saved_profile_"+w);if(cached)p_data=JSON.parse(cached);}catch(e){}      try{        const{data:j,error:f}=await L.from("profiles").select("*").eq("id",w).maybeSingle();        if(!f&&j){p_data={...(p_data||{}),...j};}      }catch(err){}      try{        const{data:u_auth}=await L.auth.getUser();        const u_email=u_auth?.user?.email;        const u_name=u_auth?.user?.user_metadata?.name||u_email?.split('@')[0]||'User';        const isAdminUser = isUserAdmin({email:u_email});        if(!p_data){          p_data={id:w,email:u_email,name:u_name,role:isAdminUser?'super_admin':'user',account_status:'active',status:'active',is_pro:isAdminUser,pro_status:isAdminUser?'active':'inactive',created_at:new Date().toISOString()};          try{await L.from('profiles').upsert(p_data)}catch(err){}        }else{          if(isAdminUser){            p_data={...p_data,role:'super_admin',is_pro:!0,pro_status:'active'};            try{await L.from('profiles').update({role:'super_admin',is_pro:!0,pro_status:'active'}).eq('id',w)}catch(err){}          }        }      }catch(e){}      if(p_data){        try {          const syncState = await getCloudSyncState();          const userOverrides = syncState.userStatusOverrides || {};          const cleanEmail = (p_data.email || "").trim().toLowerCase();          const uCloud = userOverrides[p_data.id] || (cleanEmail ? userOverrides[cleanEmail] : null);          if (uCloud) {            if (uCloud.account_status !== undefined) p_data.account_status = uCloud.account_status;            if (uCloud.status !== undefined) p_data.status = uCloud.status;            if (uCloud.is_pro !== undefined) p_data.is_pro = uCloud.is_pro;            if (uCloud.pro_status !== undefined) p_data.pro_status = uCloud.pro_status;            if (uCloud.pro_expires_at) p_data.pro_expires_at = uCloud.pro_expires_at;            if (uCloud.approved_expiry_date) p_data.approved_expiry_date = uCloud.approved_expiry_date;          }        } catch(err) {}        try {          const statusOverrides = JSON.parse(localStorage.getItem("admin_status_overrides") || "{}");          const sOverride = statusOverrides[p_data.id] || (p_data.email && (statusOverrides[p_data.email] || statusOverrides[p_data.email.toLowerCase().trim()]));          if (sOverride) {            const val = (typeof sOverride === "object" && sOverride.account_status) ? sOverride.account_status : sOverride;            if (typeof val === "string") {              p_data.account_status = val;              p_data.status = val;            }          }          const proOverrides = JSON.parse(localStorage.getItem("admin_pro_overrides") || "{}");          const pOverride = proOverrides[p_data.id] || (p_data.email && (proOverrides[p_data.email] || proOverrides[p_data.email.toLowerCase().trim()]));          if (pOverride) {            if (pOverride.is_pro !== undefined) p_data.is_pro = pOverride.is_pro;            if (pOverride.pro_status !== undefined) p_data.pro_status = pOverride.pro_status;            if (pOverride.pro_expires_at) p_data.pro_expires_at = pOverride.pro_expires_at;            if (pOverride.approved_expiry_date) p_data.approved_expiry_date = pOverride.approved_expiry_date;          }        } catch(err) {}        try{localStorage.setItem("mlb_saved_profile_"+w,JSON.stringify(p_data));}catch(err){}      }      l(p_data);    } catch(err) {      console.warn('Profile fetch failure:', err);    }  },[]),  d=m.useCallback(async()=>{const currentUser=userRef.current;currentUser&&await u(currentUser.id)},[u]);  m.useEffect(()=>{    let isMounted = true;    const safetyTimer = setTimeout(() => {      if (isMounted) c(false);    }, 1500);    try {      L.auth.getSession().then(({data:j})=>{        if (!isMounted) return;        var f,g;        s(j.session);        userRef.current=((f=j.session)==null?void 0:f.user)??null;        n(userRef.current);        if((g=j.session)!=null&&g.user){          u(j.session.user.id).catch(()=>{}).finally(()=>{ if(isMounted) c(false); });        } else {          if (isMounted) c(false);        }      }).catch(err => {        console.warn('getSession error:', err);        if (isMounted) c(false);      });    } catch(err) {      if (isMounted) c(false);    }    let unsub = null;    try {      const { data: w } = L.auth.onAuthStateChange((j,f)=>{        if (!isMounted) return;        s(f);        userRef.current=(f==null?void 0:f.user)??null;        n(userRef.current);        if(f!=null&&f.user){          u(f.user.id).catch(()=>{});        } else {          l(null);        }      });      unsub = w?.subscription?.unsubscribe;    } catch(err) {}    const handleProfileSync = () => {      const currentUser=userRef.current;      if (currentUser) u(currentUser.id).catch(()=>{});    };    window.addEventListener("user_profile_updated", handleProfileSync);    window.addEventListener("user_status_changed", handleProfileSync);    window.addEventListener("recharge_status_updated", handleProfileSync);    window.addEventListener("storage", handleProfileSync);    window.addEventListener("focus", handleProfileSync);    document.addEventListener("visibilitychange", handleProfileSync);    return () => {      isMounted = false;      clearTimeout(safetyTimer);      if(unsub) unsub();      window.removeEventListener("user_profile_updated", handleProfileSync);      window.removeEventListener("user_status_changed", handleProfileSync);      window.removeEventListener("recharge_status_updated", handleProfileSync);      window.removeEventListener("storage", handleProfileSync);      window.removeEventListener("focus", handleProfileSync);      document.removeEventListener("visibilitychange", handleProfileSync);    };  },[u]);  const h=async(w,j,f)=>{try{const{error:g}=await L.auth.signUp({email:w,password:j,options:{data:{name:f}}});return{error:(g==null?void 0:g.message)??null}}catch(e){return{error:e.message||'Sign up failed'}}},  p=async(w,j)=>{try{const{error:f}=await L.auth.signInWithPassword({email:w,password:j});return{error:(f==null?void 0:f.message)??null}}catch(e){return{error:e.message||'Sign in failed'}}},  v=async()=>{try{await L.auth.signOut()}catch(e){}l(null)},  x=async w=>{try{const{error:j}=await L.auth.resetPasswordForEmail(w);return{error:(j==null?void 0:j.message)??null}}catch(e){return{error:e.message||'Reset failed'}}};    m.useEffect(function() {    if (t && i) {      try { checkProExpiryNotifications(t, i); } catch(e) {}      const interval = setInterval(function() {        try { checkProExpiryNotifications(t, i); } catch(e) {}      }, 3600000);      return function() { clearInterval(interval); };    }  }, [t, i]);  return a.jsx(Tp.Provider,{value:{user:t,session:r,profile:i,loading:o,signUp:h,signIn:p,signOut:v,resetPassword:x,refreshProfile:d},children:e})}function Ae(){const e=m.useContext(Tp);if(!e)throw new Error("useAuth must be used within AuthProvider");return e}/**
  * @license lucide-react v0.446.0 - ISC
  *
  * This source code is licensed under the ISC license.
@@ -1150,30 +957,27 @@ async function getCloudSyncState(forceFresh = false) {
   let listingStatusOverrides = {};
   let userStatusOverrides = {};
   let rechargeStatusOverrides = {};
-  let cloudRechargeRequests = [];
-  let cloudTransactions = [];
   let cloudConfig = {};
-  
+
+  try { deletedListingIds = JSON.parse(localStorage.getItem("deleted_listing_ids") || "[]"); } catch(e) {}
+  try { listingStatusOverrides = JSON.parse(localStorage.getItem("listing_status_overrides") || "{}"); } catch(e) {}
+  try { userStatusOverrides = JSON.parse(localStorage.getItem("admin_status_overrides") || "{}"); } catch(e) {}
+  try { rechargeStatusOverrides = JSON.parse(localStorage.getItem("recharge_status_overrides") || "{}"); } catch(e) {}
+
   try {
-    const { data: sysRows, error: sysError } = await L.from("listings")
+    const { data: sysRows } = await L.from("listings")
       .select("title, description, created_at")
       .in("title", [
         "[SYS_DELETED_LISTING]",
         "[SYS_LISTING_STATUS]",
         "[SYS_USER_STATUS]",
         "[SYS_RECHARGE_STATUS]",
-        "[SYS_RECHARGE_REQUEST]",
-        "[SYS_TOP_PRO_REQUEST]",
-        "[SYS_TRANSACTION]",
         "[SYS_APP_CONFIG]"
       ])
       .order("created_at", { ascending: false })
-      .limit(600);
+      .limit(350);
 
-    if (!sysError && sysRows && Array.isArray(sysRows)) {
-      const seenReqKeys = new Set();
-      const seenTxKeys = new Set();
-      
+    if (sysRows && Array.isArray(sysRows)) {
       sysRows.forEach(row => {
         if (!row || !row.description) return;
         try {
@@ -1233,32 +1037,19 @@ async function getCloudSyncState(forceFresh = false) {
               if (uId && !userStatusOverrides[uId]) userStatusOverrides[uId] = proData;
               if (uEmail && !userStatusOverrides[uEmail]) userStatusOverrides[uEmail] = proData;
             }
-          } else if (row.title === "[SYS_RECHARGE_REQUEST]" || row.title === "[SYS_TOP_PRO_REQUEST]") {
-            const reqKey = parsed.id || parsed.utr || (parsed.user_id + "_" + row.created_at);
-            if (reqKey && !seenReqKeys.has(reqKey)) {
-              seenReqKeys.add(reqKey);
-              cloudRechargeRequests.push({
-                ...parsed,
-                created_at: parsed.created_at || parsed.submitted_at || row.created_at
-              });
-            }
-          } else if (row.title === "[SYS_TRANSACTION]") {
-            const txKey = parsed.id || parsed.utr || (parsed.user_id + "_" + row.created_at);
-            if (txKey && !seenTxKeys.has(txKey)) {
-              seenTxKeys.add(txKey);
-              cloudTransactions.push({
-                ...parsed,
-                created_at: parsed.created_at || row.created_at
-              });
-            }
           } else if (row.title === "[SYS_APP_CONFIG]") {
             if (!cloudConfig.updated_at) cloudConfig = parsed;
           }
         } catch(e) {}
       });
+
+      try { localStorage.setItem("deleted_listing_ids", JSON.stringify(deletedListingIds)); } catch(e) {}
+      try { localStorage.setItem("listing_status_overrides", JSON.stringify(listingStatusOverrides)); } catch(e) {}
+      try { localStorage.setItem("admin_status_overrides", JSON.stringify(userStatusOverrides)); } catch(e) {}
+      try { localStorage.setItem("recharge_status_overrides", JSON.stringify(rechargeStatusOverrides)); } catch(e) {}
     }
   } catch(err) {
-    console.warn("getCloudSyncState error:", err);
+    console.warn("getCloudSyncState fetch error:", err);
   }
 
   _cachedCloudSync = {
@@ -1266,13 +1057,12 @@ async function getCloudSyncState(forceFresh = false) {
     listingStatusOverrides,
     userStatusOverrides,
     rechargeStatusOverrides,
-    cloudRechargeRequests,
-    cloudTransactions,
     cloudConfig
   };
   _lastCloudSyncFetchTime = Date.now();
   return _cachedCloudSync;
 }
+
 async function Vp(e={}){
   let list = [];
   let syncState = { deletedListingIds: [], listingStatusOverrides: {} };
@@ -1566,51 +1356,69 @@ async function syncCloudConfig(updates) {
 }
 
 async function getAdminNotifications() {
-  let allReqs = [];
-  try { allReqs = await Jp(); } catch(e) {}
-  
-  let readNotifs = new Set();
+  let localNotifs = [];
   try {
-    const storedRead = JSON.parse(localStorage.getItem("admin_read_notif_ids") || "[]");
-    if (Array.isArray(storedRead)) readNotifs = new Set(storedRead);
+    localNotifs = JSON.parse(localStorage.getItem("admin_notifications") || "[]");
+    if (!Array.isArray(localNotifs)) localNotifs = [];
+  } catch(e) { localNotifs = []; }
+
+  try {
+    let allReqs = [];
+    try { allReqs = await Jp(); } catch(e) {}
+    if (Array.isArray(allReqs)) {
+      const existingReqIds = new Set(localNotifs.map(n => n.req_id || n.id).filter(Boolean));
+      const existingUtrs = new Set(localNotifs.map(n => (n.utr || "").toLowerCase().trim()).filter(Boolean));
+      
+      let addedAny = false;
+      allReqs.forEach(req => {
+        if (!req || !req.id) return;
+        const cleanUtr = (req.utr || "").toLowerCase().trim();
+        if (existingReqIds.has(req.id) || (cleanUtr && cleanUtr.length >= 5 && existingUtrs.has(cleanUtr))) return;
+
+        const isTop = req.is_top_pro === true || req.type === "top_pro_boost" || req.plan_id === "plan_single_top_pro" || Number(req.amount) === 30 || Number(req.amount) === 20 || Number(req.amount) === 10 || Boolean(req.listing_id || req.listing_title);
+        const uName = req.user?.name || req.user_name || "User";
+        const uEmail = req.user?.email || req.user_email || "";
+        const uPhone = req.user?.phone || req.user_phone || "";
+        const amt = Number(req.amount) || (isTop ? 30 : 112.5);
+
+        const newNotif = {
+          id: "admin_notif_" + req.id,
+          req_id: req.id,
+          type: isTop ? "top_pro_request" : "monthly_plan_request",
+          title: isTop ? "⭐ New Top PRO Listing Request" : "👑 New Monthly PRO Plan Request",
+          message: isTop 
+            ? ("User " + uName + (uEmail ? " (" + uEmail + ")" : "") + " requested Top PRO Boost for " + (req.listing_title || "Listing") + " (₹" + amt + ")")
+            : ("User " + uName + (uEmail ? " (" + uEmail + ")" : "") + " submitted recharge of ₹" + amt + " for " + (req.plan?.name || "Monthly PRO") + " (UTR: " + (req.utr || "N/A") + ")"),
+          user_name: uName,
+          user_email: uEmail,
+          user_phone: uPhone,
+          target_tab: isTop ? "top_pro_requests" : "recharges",
+          listing_id: req.listing_id || "",
+          listing_title: req.listing_title || "",
+          plan_name: req.plan?.name || (isTop ? "Top PRO Boost" : "Monthly PRO"),
+          amount: amt,
+          utr: req.utr || "",
+          read_at: req.status === "pending" ? null : (req.reviewed_at || new Date().toISOString()),
+          created_at: req.created_at || req.submitted_at || new Date().toISOString()
+        };
+
+        existingReqIds.add(req.id);
+        if (cleanUtr && cleanUtr.length >= 5) existingUtrs.add(cleanUtr);
+        localNotifs.push(newNotif);
+        addedAny = true;
+      });
+
+      if (addedAny) {
+        localNotifs.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        try { localStorage.setItem("admin_notifications", JSON.stringify(localNotifs)); } catch(e) {}
+      }
+    }
   } catch(e) {}
 
-  const notifs = [];
-  (allReqs || []).forEach(req => {
-    if (!req || !req.id) return;
-    const isPending = req.status === "pending";
-    const notifId = "admin_notif_" + req.id;
-    const isRead = !isPending || readNotifs.has(notifId);
-    const isTop = req.is_top_pro === true || req.type === "top_pro_boost" || req.plan_id === "plan_single_top_pro" || Number(req.amount) === 30 || Number(req.amount) === 20 || Number(req.amount) === 10 || Boolean(req.listing_id || req.listing_title);
-    const uName = req.user?.name || req.user_name || "User";
-    const uEmail = req.user?.email || req.user_email || "";
-    const uPhone = req.user?.phone || req.user_phone || "";
-    const amt = Number(req.amount) || (isTop ? 30 : 112.5);
-
-    notifs.push({
-      id: notifId,
-      req_id: req.id,
-      type: isTop ? "top_pro_request" : "monthly_plan_request",
-      title: isTop ? "⭐ Top PRO Boost Request" : "👑 Monthly PRO Plan Request",
-      message: `${uName} submitted ₹${amt} with UTR: ${req.utr || "N/A"} (${req.status})`,
-      user_name: uName,
-      user_email: uEmail,
-      user_phone: uPhone,
-      target_tab: isTop ? "top_pro_requests" : "recharges",
-      listing_id: req.listing_id || "",
-      listing_title: req.listing_title || "",
-      plan_name: req.plan?.name || (isTop ? "Top PRO Boost" : "Monthly PRO"),
-      amount: amt,
-      utr: req.utr || "",
-      status: req.status,
-      created_at: req.created_at || req.submitted_at || new Date().toISOString(),
-      read_at: isRead ? new Date().toISOString() : null
-    });
-  });
-
-  notifs.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-  return notifs;
+  localNotifs.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  return localNotifs;
 }
+
 function markAdminNotificationRead(notifId) {
   try {
     const list = JSON.parse(localStorage.getItem("admin_notifications") || "[]");
@@ -2271,27 +2079,33 @@ async function L1Fixed(e) {
 }
 L1 = L1Fixed;
 
-async function Jp() {
+async function Jp(){
   let dbList = [];
   try {
     const { data: e, error: t } = await L.from("recharge_requests").select("*").order("submitted_at", { ascending: !1 });
     if (!t && e && Array.isArray(e) && e.length > 0) dbList = e;
   } catch(err) {}
+  if (!dbList || dbList.length === 0) {
+    try {
+      const { data: e2 } = await L.from("recharge_requests").select("*").order("submitted_at", { ascending: !1 });
+      if (e2 && Array.isArray(e2) && e2.length > 0) dbList = e2;
+    } catch(err) {}
+  }
 
-  let syncState = { rechargeStatusOverrides: {}, cloudRechargeRequests: [] };
-  try { syncState = await getCloudSyncState(true); } catch(err) {}
+  let syncState = { rechargeStatusOverrides: {} };
+  try { syncState = await getCloudSyncState(); } catch(err) {}
   const cloudStatusOverrides = syncState.rechargeStatusOverrides || {};
-  const cloudReqs = syncState.cloudRechargeRequests || [];
+
+  let localList = [];
+  try { localList = JSON.parse(localStorage.getItem("all_recharge_requests") || "[]"); } catch(err) {}
 
   const mergedMap = new Map();
-
-  cloudReqs.forEach(r => {
+  dbList.forEach(r => {
     if (!r) return;
     const key = r.id || r.utr;
     if (key) mergedMap.set(key, r);
   });
-
-  dbList.forEach(r => {
+  localList.forEach(r => {
     if (!r) return;
     const key = r.id || r.utr;
     if (key) {
@@ -2313,17 +2127,14 @@ async function Jp() {
     return r;
   });
 
-  finalReqs.sort((a, b) => new Date(b.created_at || b.submitted_at || 0).getTime() - new Date(a.created_at || a.submitted_at || 0).getTime());
   return finalReqs;
 }
-
-async function j1(e, optListingId, optFeatured) {
+async function j1(e, optListingId, optFeatured){
   let reqObj = null;
   try {
     const list = await Jp();
     reqObj = list.find(r => r && (r.id === e || r.utr === e));
   } catch(err) {}
-
   const isUUID = str => typeof str === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
   const durationDays = reqObj?.plan?.duration_days || (Number(reqObj?.amount) >= 300 ? 365 : Number(reqObj?.amount) >= 180 ? 180 : Number(reqObj?.amount) >= 115 ? 90 : 30);
   const expDate = new Date(Date.now() + durationDays * 86400000).toISOString();
@@ -2349,7 +2160,6 @@ async function j1(e, optListingId, optFeatured) {
     account_status: "active",
     status: "active"
   };
-
   try {
     if (uId && isUUID(uId)) {
       await L.from("profiles").update(proProfileUpdate).eq("id", uId);
@@ -2373,8 +2183,8 @@ async function j1(e, optListingId, optFeatured) {
     approved_expiry_date: expDate,
     user_id: uId || "",
     user_email: uEmail || "",
+    is_top_pro: Boolean(reqObj?.is_top_pro || optFeatured),
     listing_id: targetListingId || "",
-    is_featured: true,
     reviewed_at: new Date().toISOString()
   });
 
@@ -2382,89 +2192,116 @@ async function j1(e, optListingId, optFeatured) {
     await saveCloudSyncRecord("[SYS_USER_STATUS]", {
       user_id: uId || "",
       user_email: uEmail || "",
-      ...proProfileUpdate,
+      is_pro: true,
+      pro_status: "active",
+      pro_expires_at: expDate,
+      approved_expiry_date: expDate,
+      account_status: "active",
+      status: "active",
       updated_at: new Date().toISOString()
     });
   }
 
-  await saveCloudSyncRecord("[SYS_TRANSACTION]", {
-    id: "tx_" + e,
-    req_id: e,
-    user_id: uId || "",
-    user_email: uEmail || "",
-    user_name: reqObj?.user_name || "User",
-    amount: Number(reqObj?.amount) || 0,
-    type: reqObj?.type || "monthly_plan",
-    plan_name: reqObj?.plan?.name || "Monthly PRO",
-    utr: reqObj?.utr || "",
-    status: "approved",
-    approved_expiry_date: expDate,
-    created_at: new Date().toISOString()
-  });
-
-  _lastCloudSyncFetchTime = 0;
+  try {
+    const overrides = JSON.parse(localStorage.getItem("recharge_status_overrides") || "{}");
+    overrides[e] = { status: "approved", approved_expiry_date: expDate };
+    if (reqObj && reqObj.utr) overrides[reqObj.utr] = { status: "approved", approved_expiry_date: expDate };
+    localStorage.setItem("recharge_status_overrides", JSON.stringify(overrides));
+  } catch(err) {}
 
   try {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("recharge_status_updated", { detail: { req_id: e, status: "approved" } }));
-      window.dispatchEvent(new CustomEvent("user_status_updated", { detail: { user_id: uId, email: uEmail, is_pro: true, status: "active" } }));
-      window.dispatchEvent(new Event("storage"));
+    const proOverrides = JSON.parse(localStorage.getItem("admin_pro_overrides") || "{}");
+    const pData = { is_pro: true, pro_status: "active", pro_expires_at: expDate, approved_expiry_date: expDate };
+    if (uId) proOverrides[uId] = pData;
+    if (uEmail) {
+      proOverrides[uEmail] = pData;
+      proOverrides[uEmail.toLowerCase().trim()] = pData;
+    }
+    localStorage.setItem("admin_pro_overrides", JSON.stringify(proOverrides));
+    localStorage.setItem("pro_status_overrides", JSON.stringify(proOverrides));
+  } catch(err) {}
+
+  try {
+    const users = JSON.parse(localStorage.getItem("admin_users") || "[]");
+    if (Array.isArray(users)) {
+      users.forEach(u => {
+        const matchId = uId && (u.id === uId || u.user_id === uId);
+        const cleanU = (u.email || "").toLowerCase().trim();
+        const matchEmail = uEmail && cleanU === uEmail.toLowerCase().trim();
+        if (matchId || matchEmail) {
+          u.is_pro = true;
+          u.pro_status = "active";
+          u.pro_expires_at = expDate;
+          u.approved_expiry_date = expDate;
+          u.account_status = "active";
+          u.status = "active";
+        }
+      });
+      localStorage.setItem("admin_users", JSON.stringify(users));
     }
   } catch(err) {}
+
+  try {
+    const local = JSON.parse(localStorage.getItem("all_recharge_requests") || "[]");
+    local.forEach(r => {
+      if (r && (r.id === e || (reqObj && reqObj.utr && r.utr === reqObj.utr))) {
+        r.status = "approved";
+        r.approved_expiry_date = expDate;
+      }
+    });
+    localStorage.setItem("all_recharge_requests", JSON.stringify(local));
+  } catch(err) {}
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("recharge_status_updated", { detail: { id: e, status: "approved" } }));
+    window.dispatchEvent(new CustomEvent("user_profile_updated", { detail: { id: uId, email: uEmail, is_pro: true } }));
+    window.dispatchEvent(new Event("storage"));
+  }
 }
 
-async function _1(e, t) {
+async function _1(e, t){
   let reqObj = null;
   try {
     const list = await Jp();
     reqObj = list.find(r => r && (r.id === e || r.utr === e));
   } catch(err) {}
-
   const isUUID = str => typeof str === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-  try {
-    if (isUUID(e)) {
-      await L.from("recharge_requests").update({
-        status: "rejected",
-        rejection_reason: t || "Invalid UTR / Payment Not Received",
-        reviewed_at: new Date().toISOString()
-      }).eq("id", e);
-    }
-  } catch(err) {}
+  try{ await L.rpc("reject_recharge", { p_request_id: e, p_reason: t }); } catch(err) {}
+  try{ if(isUUID(e)) await L.from("recharge_requests").update({ status: "rejected", rejection_reason: t }).eq("id", e); } catch(err) {}
 
   await saveCloudSyncRecord("[SYS_RECHARGE_STATUS]", {
     req_id: e,
     utr: reqObj?.utr || "",
     status: "rejected",
-    rejection_reason: t || "Invalid UTR / Payment Not Received",
+    rejection_reason: t,
     user_id: reqObj?.user_id || "",
-    user_email: reqObj?.user_email || "",
     reviewed_at: new Date().toISOString()
   });
 
-  await saveCloudSyncRecord("[SYS_TRANSACTION]", {
-    id: "tx_" + e,
-    req_id: e,
-    user_id: reqObj?.user_id || "",
-    user_email: reqObj?.user_email || "",
-    user_name: reqObj?.user_name || "User",
-    amount: Number(reqObj?.amount) || 0,
-    type: reqObj?.type || "monthly_plan",
-    plan_name: reqObj?.plan?.name || "Monthly PRO",
-    utr: reqObj?.utr || "",
-    status: "rejected",
-    rejection_reason: t || "Rejected",
-    created_at: new Date().toISOString()
-  });
-
-  _lastCloudSyncFetchTime = 0;
+  try {
+    const overrides = JSON.parse(localStorage.getItem("recharge_status_overrides") || "{}");
+    overrides[e] = { status: "rejected", rejection_reason: t };
+    if (reqObj && reqObj.utr) overrides[reqObj.utr] = { status: "rejected", rejection_reason: t };
+    localStorage.setItem("recharge_status_overrides", JSON.stringify(overrides));
+  } catch(err) {}
 
   try {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("recharge_status_updated", { detail: { req_id: e, status: "rejected" } }));
-      window.dispatchEvent(new Event("storage"));
-    }
+    const local = JSON.parse(localStorage.getItem("all_recharge_requests") || "[]");
+    local.forEach(r => {
+      if (r && (r.id === e || (reqObj && reqObj.utr && r.utr === reqObj.utr))) {
+        r.status = "rejected";
+        r.rejection_reason = t;
+      }
+    });
+    localStorage.setItem("all_recharge_requests", JSON.stringify(local));
   } catch(err) {}
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("recharge_status_updated", { detail: { id: e, status: "rejected" } }));
+    window.dispatchEvent(new Event("storage"));
+  }
 }
+
 async function xd(e,t,n){
   if (t === "deleted") {
     try {
@@ -2583,7 +2420,7 @@ async function wd(e, t, uEmail) {
   try { await L.rpc("admin_set_account_status", { p_user_id: e, p_status: t }); } catch(err) {}
   try { await L.from("profiles").update({ account_status: t, status: t }).eq("id", e); } catch(err) {}
   try { if (uEmail) await L.from("profiles").update({ account_status: t, status: t }).eq("email", uEmail); } catch(err) {}
-  
+
   await saveCloudSyncRecord("[SYS_USER_STATUS]", {
     user_id: e || "",
     user_email: uEmail || "",
@@ -2591,16 +2428,50 @@ async function wd(e, t, uEmail) {
     status: t,
     updated_at: new Date().toISOString()
   });
-  
-  _lastCloudSyncFetchTime = 0;
-  
+
   try {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("user_status_updated", { detail: { user_id: e, email: uEmail, status: t } }));
-      window.dispatchEvent(new CustomEvent("user_status_changed", { detail: { user_id: e, email: uEmail, status: t } }));
-      window.dispatchEvent(new Event("storage"));
+    const stats = JSON.parse(localStorage.getItem("admin_status_overrides") || "{}");
+    if (e) stats[e] = { account_status: t, status: t };
+    if (uEmail) {
+      stats[uEmail] = { account_status: t, status: t };
+      stats[uEmail.toLowerCase().trim()] = { account_status: t, status: t };
+    }
+    localStorage.setItem("admin_status_overrides", JSON.stringify(stats));
+  } catch(err) {}
+
+  try {
+    if (e) {
+      const cachedStr = localStorage.getItem("mlb_saved_profile_" + e);
+      if (cachedStr) {
+        const cached = JSON.parse(cachedStr);
+        cached.account_status = t;
+        cached.status = t;
+        localStorage.setItem("mlb_saved_profile_" + e, JSON.stringify(cached));
+      }
     }
   } catch(err) {}
+
+  try {
+    const users = JSON.parse(localStorage.getItem("admin_users") || "[]");
+    if (Array.isArray(users)) {
+      users.forEach(u => {
+        const matchId = e && (u.id === e || u.user_id === e);
+        const cleanU = (u.email || "").toLowerCase().trim();
+        const matchEmail = uEmail && cleanU === uEmail.toLowerCase().trim();
+        if (matchId || matchEmail) {
+          u.account_status = t;
+          u.status = t;
+        }
+      });
+      localStorage.setItem("admin_users", JSON.stringify(users));
+    }
+  } catch(err) {}
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("user_profile_updated", { detail: { id: e, email: uEmail, account_status: t, status: t } }));
+    window.dispatchEvent(new CustomEvent("user_status_changed", { detail: { id: e, email: uEmail, account_status: t } }));
+    window.dispatchEvent(new Event("storage"));
+  }
 }
 
 async function k1(e, t, n, uEmail) {
@@ -2609,7 +2480,7 @@ async function k1(e, t, n, uEmail) {
   try { await L.rpc("admin_activate_pro", { p_user_id: e, p_duration_days: days, p_reason: n || ("Admin activated PRO: " + days + " days") }); } catch(err) {}
   try { await L.from("profiles").update({ is_pro: !0, pro_status: "active", pro_expires_at: expiry, pro_expiry_at: expiry, approved_expiry_date: expiry, account_status: "active", status: "active" }).eq("id", e); } catch(err) {}
   try { if (uEmail) await L.from("profiles").update({ is_pro: !0, pro_status: "active", pro_expires_at: expiry, pro_expiry_at: expiry, approved_expiry_date: expiry, account_status: "active", status: "active" }).eq("email", uEmail); } catch(err) {}
-  
+
   await saveCloudSyncRecord("[SYS_USER_STATUS]", {
     user_id: e || "",
     user_email: uEmail || "",
@@ -2621,20 +2492,51 @@ async function k1(e, t, n, uEmail) {
     status: "active",
     updated_at: new Date().toISOString()
   });
-  _lastCloudSyncFetchTime = 0;
+
+  const pData = { is_pro: !0, pro_status: "active", pro_expires_at: expiry, pro_expiry_at: expiry, approved_expiry_date: expiry };
   try {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("user_status_updated", { detail: { user_id: e, email: uEmail, is_pro: true, pro_status: "active" } }));
-      window.dispatchEvent(new Event("storage"));
+    const localProList = JSON.parse(localStorage.getItem("admin_pro_overrides") || "{}");
+    if (e) localProList[e] = pData;
+    if (uEmail) {
+      localProList[uEmail] = pData;
+      localProList[uEmail.toLowerCase().trim()] = pData;
+    }
+    localStorage.setItem("admin_pro_overrides", JSON.stringify(localProList));
+    localStorage.setItem("pro_status_overrides", JSON.stringify(localProList));
+  } catch(err) {}
+
+  try {
+    const users = JSON.parse(localStorage.getItem("admin_users") || "[]");
+    if (Array.isArray(users)) {
+      users.forEach(u => {
+        const matchId = e && (u.id === e || u.user_id === e);
+        const cleanU = (u.email || "").toLowerCase().trim();
+        const matchEmail = uEmail && cleanU === uEmail.toLowerCase().trim();
+        if (matchId || matchEmail) {
+          u.is_pro = !0;
+          u.pro_status = "active";
+          u.pro_expires_at = expiry;
+          u.pro_expiry_at = expiry;
+          u.approved_expiry_date = expiry;
+          u.account_status = "active";
+          u.status = "active";
+        }
+      });
+      localStorage.setItem("admin_users", JSON.stringify(users));
     }
   } catch(err) {}
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("user_profile_updated", { detail: { id: e, email: uEmail, is_pro: true, pro_status: "active" } }));
+    window.dispatchEvent(new Event("storage"));
+  }
 }
 
 async function S1(e, uEmail) {
   try { await L.rpc("admin_remove_pro", { p_user_id: e }); } catch(err) {}
   try { await L.from("profiles").update({ is_pro: !1, pro_status: "inactive", pro_expires_at: null, pro_expiry_at: null, approved_expiry_date: null }).eq("id", e); } catch(err) {}
   try { if (uEmail) await L.from("profiles").update({ is_pro: !1, pro_status: "inactive", pro_expires_at: null, pro_expiry_at: null, approved_expiry_date: null }).eq("email", uEmail); } catch(err) {}
-  
+
   await saveCloudSyncRecord("[SYS_USER_STATUS]", {
     user_id: e || "",
     user_email: uEmail || "",
@@ -2644,13 +2546,42 @@ async function S1(e, uEmail) {
     approved_expiry_date: null,
     updated_at: new Date().toISOString()
   });
-  _lastCloudSyncFetchTime = 0;
+
+  const pData = { is_pro: !1, pro_status: "inactive", pro_expires_at: null, pro_expiry_at: null, approved_expiry_date: null };
   try {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("user_status_updated", { detail: { user_id: e, email: uEmail, is_pro: false, pro_status: "inactive" } }));
-      window.dispatchEvent(new Event("storage"));
+    const localProList = JSON.parse(localStorage.getItem("admin_pro_overrides") || "{}");
+    if (e) localProList[e] = pData;
+    if (uEmail) {
+      localProList[uEmail] = pData;
+      localProList[uEmail.toLowerCase().trim()] = pData;
+    }
+    localStorage.setItem("admin_pro_overrides", JSON.stringify(localProList));
+    localStorage.setItem("pro_status_overrides", JSON.stringify(localProList));
+  } catch(err) {}
+
+  try {
+    const users = JSON.parse(localStorage.getItem("admin_users") || "[]");
+    if (Array.isArray(users)) {
+      users.forEach(u => {
+        const matchId = e && (u.id === e || u.user_id === e);
+        const cleanU = (u.email || "").toLowerCase().trim();
+        const matchEmail = uEmail && cleanU === uEmail.toLowerCase().trim();
+        if (matchId || matchEmail) {
+          u.is_pro = !1;
+          u.pro_status = "inactive";
+          u.pro_expires_at = null;
+          u.pro_expiry_at = null;
+          u.approved_expiry_date = null;
+        }
+      });
+      localStorage.setItem("admin_users", JSON.stringify(users));
     }
   } catch(err) {}
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("user_profile_updated", { detail: { id: e, email: uEmail, is_pro: false, pro_status: "inactive" } }));
+    window.dispatchEvent(new Event("storage"));
+  }
 }
 async function N1(e){let item={...e};if(!item.id)item.id="cat_"+Date.now();try{if(e.id){await L.from("categories").update(item).eq("id",e.id)}else{await L.from("categories").insert(item)}}catch(err){}try{const saved=JSON.parse(localStorage.getItem("admin_categories")||"[]");const idx=saved.findIndex(c=>c.id===item.id);if(idx>=0)saved[idx]=item;else saved.push(item);localStorage.setItem("admin_categories",JSON.stringify(saved))}catch(err){}return item}async function C1(e){try{await L.from("categories").delete().eq("id",e)}catch(err){}try{const saved=JSON.parse(localStorage.getItem("admin_categories")||"[]");const filtered=saved.filter(c=>c.id!==e);localStorage.setItem("admin_categories",JSON.stringify(filtered))}catch(err){}}async function E1(e){let item={...e};if(!item.id)item.id="loc_"+Date.now();try{if(e.id){await L.from("locations").update(item).eq("id",e.id)}else{await L.from("locations").insert(item)}}catch(err){}try{const saved=JSON.parse(localStorage.getItem("admin_locations")||"[]");const idx=saved.findIndex(l=>l.id===item.id);if(idx>=0)saved[idx]=item;else saved.push(item);localStorage.setItem("admin_locations",JSON.stringify(saved))}catch(err){}return item}async function P1(e){try{await L.from("locations").delete().eq("id",e)}catch(err){}try{const saved=JSON.parse(localStorage.getItem("admin_locations")||"[]");const filtered=saved.filter(l=>l.id!==e);localStorage.setItem("admin_locations",JSON.stringify(filtered))}catch(err){}}async function R1(e){let item={...e};if(!item.id)item.id="banner_"+Date.now()+"_"+Math.random().toString(36).slice(2);try{if(e.id){const{error:t}=await L.from("banners").update(item).eq("id",e.id);if(t)console.warn("Supabase banner update error:",t)}else{const{error:t}=await L.from("banners").insert(item);if(t)console.warn("Supabase banner insert error:",t)}}catch(err){console.warn("Banner save fallback to local:",err)}try{const saved=JSON.parse(localStorage.getItem("admin_banners")||"[]");const idx=saved.findIndex(b=>b.id===item.id);if(idx>=0)saved[idx]=item;else saved.push(item);localStorage.setItem("admin_banners",JSON.stringify(saved))}catch(err){}return item}async function T1(e){try{await L.from("banners").delete().eq("id",e)}catch(err){}try{const saved=JSON.parse(localStorage.getItem("admin_banners")||"[]");const filtered=saved.filter(b=>b.id!==e);localStorage.setItem("admin_banners",JSON.stringify(filtered))}catch(err){}}async function L1(e){  let item = Object.assign({}, e);  if (!item.id) item.id = "plan_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);  try {    const { data: existing } = await L.from("pro_plans").select("id").eq("id", item.id).maybeSingle();    if (existing) {      await L.from("pro_plans").update(item).eq("id", item.id);    } else {      await L.from("pro_plans").insert(item);    }  } catch(err) {}  let saved = [];  try {    saved = JSON.parse(localStorage.getItem("admin_plans") || "[]");  } catch(err) {}  if (!Array.isArray(saved) || saved.length === 0) {    saved = [      { id: "plan_1m", name: "1 Month PRO", duration_days: 30, price: 112.5, description: "30 days priority listings & PRO badge", is_active: true, sort_order: 1 },      { id: "plan_3m", name: "3 Months PRO", duration_days: 90, price: 120, description: "90 days priority listings & PRO badge", is_active: true, sort_order: 2 },      { id: "plan_6m", name: "6 Months PRO", duration_days: 180, price: 200, description: "180 days priority listings & PRO badge", is_active: true, sort_order: 3 },      { id: "plan_1y", name: "1 Year PRO", duration_days: 365, price: 350, description: "365 days priority listings & PRO badge", is_active: true, sort_order: 4 }    ];  }  const idx = saved.findIndex(function(p) { return p && (p.id === item.id || (p.name && item.name && p.name.toLowerCase().trim() === item.name.toLowerCase().trim())); });  if (idx >= 0) {    saved[idx] = Object.assign({}, saved[idx], item);    item.id = saved[idx].id;  } else {    saved.push(item);  }  try {    localStorage.setItem("admin_plans", JSON.stringify(saved));  } catch(err) {}  const activePlans = saved.filter(function(p) { return !p.is_deleted; });  try {    await syncCloudConfig({ plans: activePlans });  } catch(err) {}  if (typeof window !== "undefined") {    window.dispatchEvent(new CustomEvent("pro_plans_updated", { detail: activePlans }));    window.dispatchEvent(new Event("storage"));  }  return item;}
 
@@ -3919,35 +3850,105 @@ function K1(){const{signIn:e,signUp:t,resetPassword:n,refreshProfile:rf,user:cur
       ]
     })
   });
-})()]});}function G1({images:e,onAdd:t,onRemove:n,max:r=8}){const s=m.useRef(null),[i,l]=m.useState(""),o=async c=>{if(c){l("");for(const u of Array.from(c)){if(e.length>=r){l(`Maximum ${r} images allowed`);break}if(!u.type.startsWith("image/")){l("Only image files are allowed");continue}if(u.size>5*1024*1024){l("Each image must be under 5MB");continue}const d=await J1(u,1280,.8);t(d)}s.current&&(s.current.value="")}};return a.jsxs("div",{children:[a.jsxs("div",{className:"flex flex-wrap gap-3",children:[e.map((c,u)=>a.jsxs("div",{className:"relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 group",children:[a.jsx("img",{src:c,alt:"",className:"w-full h-full object-cover"}),a.jsx("button",{type:"button",onClick:()=>n(u),className:"absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80",children:a.jsx(Un,{className:"w-3.5 h-3.5"})}),u===0&&a.jsx("span",{className:"absolute bottom-0 left-0 right-0 bg-primary-500 text-white text-[10px] text-center py-0.5",children:"Cover"})]},u)),e.length<r&&a.jsxs("button",{type:"button",onClick:()=>{var c;return(c=s.current)==null?void 0:c.click()},className:"w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-primary-400 hover:text-primary-500 transition-colors",children:[a.jsx(Fp,{className:"w-5 h-5"}),a.jsx("span",{className:"text-[10px]",children:"Add Photo"})]})]}),i&&a.jsx("p",{className:"text-xs text-error-500 mt-2",children:i}),a.jsx("input",{ref:s,type:"file",accept:"image/*",multiple:!0,onChange:c=>o(c.target.files),className:"hidden"})]})}function J1(e,t,n){return new Promise((r,s)=>{const i=new FileReader;i.onload=l=>{var c;const o=new Image;o.onload=()=>{let{width:u,height:d}=o;(u>t||d>t)&&(u>d?(d=d/u*t,u=t):(u=u/d*t,d=t));const h=document.createElement("canvas");h.width=u,h.height=d;const p=h.getContext("2d");if(!p)return s(new Error("Canvas not supported"));p.drawImage(o,0,0,u,d),r(h.toDataURL("image/jpeg",n))},o.onerror=s,o.src=(c=l.target)==null?void 0:c.result},i.onerror=s,i.readAsDataURL(e)})}async function _d(e,t){const{error:n}=await L.from("profiles").update(t).eq("id",e);if(n)throw n}async function Xp(){const all=await v1();return all.filter(p=>p.is_active!==!1)}async function Q1(e) {
+})()]});}function G1({images:e,onAdd:t,onRemove:n,max:r=8}){const s=m.useRef(null),[i,l]=m.useState(""),o=async c=>{if(c){l("");for(const u of Array.from(c)){if(e.length>=r){l(`Maximum ${r} images allowed`);break}if(!u.type.startsWith("image/")){l("Only image files are allowed");continue}if(u.size>5*1024*1024){l("Each image must be under 5MB");continue}const d=await J1(u,1280,.8);t(d)}s.current&&(s.current.value="")}};return a.jsxs("div",{children:[a.jsxs("div",{className:"flex flex-wrap gap-3",children:[e.map((c,u)=>a.jsxs("div",{className:"relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 group",children:[a.jsx("img",{src:c,alt:"",className:"w-full h-full object-cover"}),a.jsx("button",{type:"button",onClick:()=>n(u),className:"absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80",children:a.jsx(Un,{className:"w-3.5 h-3.5"})}),u===0&&a.jsx("span",{className:"absolute bottom-0 left-0 right-0 bg-primary-500 text-white text-[10px] text-center py-0.5",children:"Cover"})]},u)),e.length<r&&a.jsxs("button",{type:"button",onClick:()=>{var c;return(c=s.current)==null?void 0:c.click()},className:"w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-primary-400 hover:text-primary-500 transition-colors",children:[a.jsx(Fp,{className:"w-5 h-5"}),a.jsx("span",{className:"text-[10px]",children:"Add Photo"})]})]}),i&&a.jsx("p",{className:"text-xs text-error-500 mt-2",children:i}),a.jsx("input",{ref:s,type:"file",accept:"image/*",multiple:!0,onChange:c=>o(c.target.files),className:"hidden"})]})}function J1(e,t,n){return new Promise((r,s)=>{const i=new FileReader;i.onload=l=>{var c;const o=new Image;o.onload=()=>{let{width:u,height:d}=o;(u>t||d>t)&&(u>d?(d=d/u*t,u=t):(u=u/d*t,d=t));const h=document.createElement("canvas");h.width=u,h.height=d;const p=h.getContext("2d");if(!p)return s(new Error("Canvas not supported"));p.drawImage(o,0,0,u,d),r(h.toDataURL("image/jpeg",n))},o.onerror=s,o.src=(c=l.target)==null?void 0:c.result},i.onerror=s,i.readAsDataURL(e)})}async function _d(e,t){const{error:n}=await L.from("profiles").update(t).eq("id",e);if(n)throw n}async function Xp(){const all=await v1();return all.filter(p=>p.is_active!==!1)}async function Q1(e){
   let tUser = null;
-  try { const { data: t } = await L.auth.getUser(); if (t && t.user) tUser = t.user; } catch(err) {}
+  try {
+    const { data: t } = await L.auth.getUser();
+    if (t && t.user) tUser = t.user;
+  } catch(err) {}
   if (!tUser) {
-    try { const { data: s } = await L.auth.getSession(); if (s && s.session && s.session.user) tUser = s.session.user; } catch(err) {}
-  }
-  
-  const isUUID = str => typeof str === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-  const uId = e.user_id || tUser?.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "usr_" + Date.now());
-  const uEmail = e.user_email || (e.user && e.user.email) || tUser?.email || "";
-  const uName = e.user_name || (e.user && e.user.name) || (uEmail ? uEmail.split("@")[0] : "User");
-  const uPhone = e.user_phone || (e.user && e.user.phone) || "";
-  const cleanUtr = (e.utr || "").trim();
-  const amt = Number(e.amount) || 112.5;
-  const isTopPro = Boolean(e.is_top_pro || e.type === "top_pro_boost" || e.plan_id === "plan_single_top_pro" || amt === 30 || amt === 20 || amt === 10 || e.listing_id);
-  const nowIso = new Date().toISOString();
-  const insertId = (isUUID(e.id) ? e.id : null) || ((typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : ("req_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7)));
-
-  let planObj = e.plan;
-  if (!planObj && e.plan_id) {
     try {
-      const allPlans = await Xp();
-      planObj = (allPlans || []).find(p => p.id === e.plan_id);
+      const { data: s } = await L.auth.getSession();
+      if (s && s.session && s.session.user) tUser = s.session.user;
     } catch(err) {}
   }
-  if (!planObj) {
-    planObj = isTopPro
-      ? { id: e.plan_id || "plan_top_pro", name: "Top PRO Boost", price: amt, duration_days: 30 }
-      : { id: e.plan_id || "plan_1m", name: "1 Month PRO", price: amt, duration_days: 30 };
+  if (!tUser) {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.includes("auth-token") || k.includes("supabase.auth"))) {
+          const parsed = JSON.parse(localStorage.getItem(k) || "{}");
+          if (parsed.user) { tUser = parsed.user; break; }
+          if (parsed.currentSession?.user) { tUser = parsed.currentSession.user; break; }
+        }
+      }
+    } catch(err) {}
+  }
+  const isUUID = str => typeof str === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+  const uId = (e.user_id && isUUID(e.user_id)) ? e.user_id : ((tUser?.id && isUUID(tUser.id)) ? tUser.id : (e.user_id || "54d69b2e-76f7-410d-84fc-af00f7101786"));
+  let userProfile = null;
+  if (uId && isUUID(uId)) {
+    try {
+      const { data: prof } = await L.from("profiles").select("*").eq("id", uId).maybeSingle();
+      if (prof) userProfile = prof;
+    } catch(err) {}
+  }
+  const uName = e.user_name || userProfile?.name || userProfile?.full_name || tUser?.user_metadata?.name || tUser?.email?.split("@")[0] || "User";
+  const uEmail = e.user_email || userProfile?.email || tUser?.email || "user@example.com";
+  const uPhone = userProfile?.phone || userProfile?.whatsapp || tUser?.user_metadata?.phone || "";
+  const cleanUtr = (e.utr || "").trim();
+  const amt = Number(e.amount) || (e.plan_id === "plan_single_top_pro" ? 30 : 112.5);
+  const nowIso = new Date().toISOString();
+  const isTopPro = e.type === "top_pro_boost" || e.plan_id === "plan_single_top_pro" || amt === 30 || amt === 10 || amt === 20 || Boolean(e.listing_id || e.listing_title || e.listing_image || e.is_top_pro);
+  let planObj = null;
+  if (isTopPro) {
+    planObj = { id: "plan_single_top_pro", name: "Top PRO Boost", price: amt, duration_days: 30 };
+  } else if (amt >= 300) {
+    planObj = { id: "plan_1y", name: "1 Year PRO", price: amt, duration_days: 365 };
+  } else if (amt >= 180) {
+    planObj = { id: "plan_6m", name: "6 Months PRO", price: amt, duration_days: 180 };
+  } else if (amt >= 115) {
+    planObj = { id: "plan_3m", name: "3 Months PRO", price: amt, duration_days: 90 };
+  } else {
+    planObj = { id: "plan_1m", name: "Monthly PRO (1 Month)", price: amt, duration_days: 30 };
+  }
+  const metaObj = {
+    is_top_pro: isTopPro,
+    type: isTopPro ? "top_pro_boost" : "monthly_plan",
+    plan_id: planObj.id,
+    plan_name: planObj.name,
+    amount: amt,
+    listing_id: e.listing_id || "",
+    listing_title: e.listing_title || (isTopPro ? "Top PRO Listing" : ""),
+    listing_image: e.listing_image || "",
+    price: e.price || "",
+    category: e.category || "",
+    location: e.location || "",
+    user_id: uId,
+    user_name: uName,
+    user_email: uEmail,
+    user_phone: uPhone
+  };
+  let packedProofUrl = e.payment_proof_url || "";
+  if (packedProofUrl && !packedProofUrl.startsWith("meta:")) {
+    packedProofUrl = packedProofUrl + "#meta:" + JSON.stringify(metaObj);
+  } else if (!packedProofUrl) {
+    packedProofUrl = "meta:" + JSON.stringify(metaObj);
+  }
+  let insertId = (isTopPro ? "req_top_pro_" : "req_monthly_") + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+  
+  try {
+    const dbPayload = {
+      amount: amt,
+      utr: cleanUtr,
+      payment_proof_url: packedProofUrl,
+      status: "pending",
+      submitted_at: nowIso
+    };
+    if (isUUID(uId)) {
+      dbPayload.user_id = uId;
+    }
+    if (isUUID(e.plan_id)) {
+      dbPayload.plan_id = e.plan_id;
+    } else {
+      dbPayload.plan_id = null;
+    }
+    const { data: insData, error: insErr } = await L.from("recharge_requests").insert(dbPayload).select().maybeSingle();
+    if (!insErr && insData && insData.id) {
+      insertId = insData.id;
+    }
+  } catch(err) {
+    console.warn("Supabase recharge_requests insert fallback:", err);
   }
 
   const newReq = {
@@ -3961,161 +3962,117 @@ function K1(){const{signIn:e,signUp:t,resetPassword:n,refreshProfile:rf,user:cur
     plan: planObj,
     amount: amt,
     utr: cleanUtr,
+    payment_proof_url: e.payment_proof_url || "",
+    listing_id: e.listing_id || "",
+    listing_title: e.listing_title || (isTopPro ? "Top PRO Listing" : ""),
+    listing_image: e.listing_image || "",
+    price: e.price || "",
+    category: e.category || "",
+    location: e.location || "",
     status: "pending",
     type: isTopPro ? "top_pro_boost" : "monthly_plan",
     is_top_pro: isTopPro,
-    listing_id: e.listing_id || "",
-    listing_title: e.listing_title || "",
-    payment_method: e.payment_method || "upi",
-    payment_proof_url: e.payment_proof_url || "",
     created_at: nowIso,
     submitted_at: nowIso
   };
 
   try {
-    if (isUUID(uId)) {
-      await L.from("recharge_requests").insert({
-        id: isUUID(insertId) ? insertId : undefined,
-        user_id: uId,
-        plan_id: isUUID(planObj.id) ? planObj.id : null,
-        amount: amt,
-        utr: cleanUtr,
-        status: "pending",
-        payment_proof_url: e.payment_proof_url || null,
-        submitted_at: nowIso
-      });
-    }
+    const syncUserId = (tUser?.id && isUUID(tUser.id)) ? tUser.id : (isUUID(uId) ? uId : "54d69b2e-76f7-410d-84fc-af00f7101786");
+    await L.from("listings").insert({
+      user_id: syncUserId,
+      title: isTopPro ? "[SYS_TOP_PRO_REQUEST]" : "[SYS_RECHARGE_REQUEST]",
+      category_id: "3ed03846-ea53-4f52-9db5-17550b75f3f2",
+      location_id: "02ef9e15-c49f-459e-916c-2432e90dd230",
+      price: amt,
+      condition: "new",
+      description: JSON.stringify(newReq),
+      phone: uPhone || "9876543210",
+      whatsapp: uPhone || "9876543210",
+      images: e.payment_proof_url ? [e.payment_proof_url] : (e.listing_image ? [e.listing_image] : []),
+      status: "active",
+      is_featured: false
+    });
+  } catch(err) {
+    console.warn("Cloud sync recharge insert error:", err);
+  }
+
+  try {
+    const overrides = JSON.parse(localStorage.getItem("recharge_status_overrides") || "{}");
+    if (overrides[insertId]) delete overrides[insertId];
+    if (cleanUtr && overrides[cleanUtr]) delete overrides[cleanUtr];
+    localStorage.setItem("recharge_status_overrides", JSON.stringify(overrides));
   } catch(err) {}
-
-  await saveCloudSyncRecord(isTopPro ? "[SYS_TOP_PRO_REQUEST]" : "[SYS_RECHARGE_REQUEST]", newReq);
-  
-  await saveCloudSyncRecord("[SYS_TRANSACTION]", {
-    id: "tx_" + insertId,
-    req_id: insertId,
-    user_id: uId,
-    user_name: uName,
-    user_email: uEmail,
-    user_phone: uPhone,
-    amount: amt,
-    type: isTopPro ? "top_pro_boost" : "monthly_plan",
-    plan_name: planObj.name,
-    plan_id: planObj.id,
-    utr: cleanUtr,
-    status: "pending",
-    created_at: nowIso
-  });
-
-  _lastCloudSyncFetchTime = 0;
-
+  try {
+    const list = JSON.parse(localStorage.getItem("all_recharge_requests") || "[]");
+    const filtered = list.filter(r => r && r.id !== newReq.id && (!r.utr || !cleanUtr || r.utr.trim().toLowerCase() !== cleanUtr.toLowerCase()));
+    filtered.unshift(newReq);
+    localStorage.setItem("all_recharge_requests", JSON.stringify(filtered));
+  } catch(err) {}
+  try {
+    const customList = JSON.parse(localStorage.getItem("custom_recharge_requests") || "[]");
+    const filteredCustom = customList.filter(r => r && r.id !== newReq.id && (!r.utr || !cleanUtr || r.utr.trim().toLowerCase() !== cleanUtr.toLowerCase()));
+    filteredCustom.unshift(newReq);
+    localStorage.setItem("custom_recharge_requests", JSON.stringify(filteredCustom));
+  } catch(err) {}
+  try {
+    const userReqs = JSON.parse(localStorage.getItem("user_recharge_requests") || "[]");
+    const filteredUser = userReqs.filter(r => r && r.id !== newReq.id);
+    filteredUser.unshift(newReq);
+    localStorage.setItem("user_recharge_requests", JSON.stringify(filteredUser));
+  } catch(err) {}
   try {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("recharge_request_created", { detail: newReq }));
-      window.dispatchEvent(new CustomEvent("admin_notification_received", {
-        detail: {
-          id: "notif_" + insertId,
-          req_id: insertId,
-          type: isTopPro ? "top_pro_request" : "monthly_plan_request",
-          title: isTopPro ? "⭐ New Top PRO Request" : "👑 New Monthly PRO Request",
-          message: `${uName} submitted ₹${amt} with UTR: ${cleanUtr}`,
-          user_name: uName,
-          user_email: uEmail,
-          user_phone: uPhone,
-          target_tab: isTopPro ? "top_pro_requests" : "recharges",
-          listing_id: e.listing_id || "",
-          listing_title: e.listing_title || "",
-          plan_name: planObj.name,
-          amount: amt,
-          utr: cleanUtr,
-          created_at: nowIso
-        }
-      }));
       window.dispatchEvent(new Event("storage"));
     }
   } catch(err) {}
-
+try {
+    if (isTopPro) {
+      sendAdminNotification({
+        req_id: insertId,
+        type: "top_pro_request",
+        title: "⭐ New Top PRO Listing Request",
+        message: "User " + uName + " (" + uEmail + ") requested Top PRO Boost for " + (newReq.listing_title || "Listing") + " (₹" + amt + ")",
+        user_name: uName,
+        user_email: uEmail,
+        user_phone: uPhone,
+        target_tab: "top_pro_requests",
+        listing_id: newReq.listing_id || "",
+        listing_title: newReq.listing_title || "Top PRO Listing",
+        plan_name: planObj?.name || "Top PRO Boost",
+        amount: amt,
+        utr: cleanUtr,
+        created_at: nowIso
+      });
+    } else {
+      sendAdminNotification({
+        req_id: insertId,
+        type: "monthly_plan_request",
+        title: "👑 New Monthly PRO Plan Request",
+        message: "User " + uName + " (" + uEmail + ") submitted recharge of ₹" + amt + " for " + (planObj?.name || "Monthly PRO") + " (UTR: " + cleanUtr + ")",
+        user_name: uName,
+        user_email: uEmail,
+        user_phone: uPhone,
+        target_tab: "recharges",
+        listing_id: "",
+        listing_title: "",
+        plan_name: planObj?.name || "Monthly PRO Plan",
+        amount: amt,
+        utr: cleanUtr,
+        created_at: nowIso
+      });
+    }
+  } catch(err) {}
   return newReq;
-}
-
-async function getAllTransactions() {
-  let dbTxs = [];
+}async function Y1(e){
+  let list = [];
   try {
-    const { data, error } = await L.from("transactions").select("*").order("created_at", { ascending: false });
-    if (!error && data && Array.isArray(data)) dbTxs = data;
-  } catch(e) {}
-
-  let allReqs = [];
-  try { allReqs = await Jp(); } catch(e) {}
-
-  let syncState = {};
-  try { syncState = await getCloudSyncState(); } catch(e) {}
-  const cloudTxs = syncState.cloudTransactions || [];
-
-  const txMap = new Map();
-
-  (allReqs || []).forEach(req => {
-    if (!req) return;
-    const txId = "tx_" + (req.id || req.utr);
-    txMap.set(txId, {
-      id: txId,
-      user_id: req.user_id,
-      user_name: req.user_name || (req.user && req.user.name) || (req.user_email ? req.user_email.split("@")[0] : "User"),
-      user_email: req.user_email || (req.user && req.user.email) || "",
-      user_phone: req.user_phone || (req.user && req.user.phone) || "",
-      amount: Number(req.amount) || 0,
-      type: req.type || (req.is_top_pro ? "top_pro_boost" : "monthly_plan"),
-      plan_name: req.plan?.name || (req.is_top_pro ? "Top PRO Boost" : "Monthly PRO Plan"),
-      plan_id: req.plan_id || "",
-      utr: req.utr || "",
-      status: req.status || "pending",
-      created_at: req.created_at || req.submitted_at || new Date().toISOString(),
-      approved_expiry_date: req.approved_expiry_date || null
-    });
-  });
-
-  cloudTxs.forEach(ctx => {
-    if (!ctx) return;
-    const key = ctx.id || ("tx_" + ctx.utr);
-    const existing = txMap.get(key);
-    txMap.set(key, { ...(existing || {}), ...ctx });
-  });
-
-  dbTxs.forEach(dbTx => {
-    if (!dbTx) return;
-    const key = dbTx.id || ("tx_" + dbTx.utr);
-    const existing = txMap.get(key);
-    txMap.set(key, { ...(existing || {}), ...dbTx });
-  });
-
-  const list = Array.from(txMap.values());
-  list.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    const all = await Jp();
+    list = all.filter(r => r && (r.user_id === e || (r.user && r.user.id === e)));
+  } catch(err) {}
   return list;
 }
-
-async function Y1(userId) {
-  const all = await Jp();
-  if (!userId) return all;
-  const cleanId = String(userId).toLowerCase().trim();
-  return (all || []).filter(r => {
-    if (!r) return false;
-    if (r.user_id && String(r.user_id).toLowerCase().trim() === cleanId) return true;
-    if (r.user && r.user.id && String(r.user.id).toLowerCase().trim() === cleanId) return true;
-    if (r.user_email && String(r.user_email).toLowerCase().trim() === cleanId) return true;
-    return false;
-  });
-}
-
-async function X1(userId) {
-  const all = await getAllTransactions();
-  if (!userId) return all;
-  const cleanId = String(userId).toLowerCase().trim();
-  return (all || []).filter(t => {
-    if (!t) return false;
-    if (t.user_id && String(t.user_id).toLowerCase().trim() === cleanId) return true;
-    if (t.user_email && String(t.user_email).toLowerCase().trim() === cleanId) return true;
-    return false;
-  });
-}
-async function Z1(e,t){const n=e.name.split(".").pop()||"jpg",r=`avatars/${t}-${Date.now()}.${n}`,{data:s,error:i}=await L.storage.from("media").upload(r,e,{contentType:e.type,upsert:!0});if(i)throw i;const{data:l}=L.storage.from("media").getPublicUrl(s.path);return l.publicUrl}async function ej(e,t){const n=e.name.split(".").pop()||"jpg",r=`proofs/${t}-${Date.now()}.${n}`,{data:s,error:i}=await L.storage.from("media").upload(r,e,{contentType:e.type,upsert:!1});if(i)throw i;const{data:l}=L.storage.from("media").getPublicUrl(s.path);return l.publicUrl}async function tj(){
+async function X1(e){const{data:t,error:n}=await L.from("transactions").select("*").eq("user_id",e).order("created_at",{ascending:!1});if(n)throw n;return t}async function Z1(e,t){const n=e.name.split(".").pop()||"jpg",r=`avatars/${t}-${Date.now()}.${n}`,{data:s,error:i}=await L.storage.from("media").upload(r,e,{contentType:e.type,upsert:!0});if(i)throw i;const{data:l}=L.storage.from("media").getPublicUrl(s.path);return l.publicUrl}async function ej(e,t){const n=e.name.split(".").pop()||"jpg",r=`proofs/${t}-${Date.now()}.${n}`,{data:s,error:i}=await L.storage.from("media").upload(r,e,{contentType:e.type,upsert:!1});if(i)throw i;const{data:l}=L.storage.from("media").getPublicUrl(s.path);return l.publicUrl}async function tj(){
   const n = {
     upi_id: "grejamarak@oksbi",
     payment_qr_code: "",
@@ -8598,31 +8555,19 @@ class ErrorBoundary extends m.Component{
   });
 }
 
-let _mlbMountedRoot = null;
 function mountApp(){
   try{
     const rootEl = document.getElementById('root');
-    if(rootEl && !_mlbMountedRoot){
-      _mlbMountedRoot = Mf(rootEl);
-      _mlbMountedRoot.render(a.jsx(_j,{}));
+    if(rootEl){
+      Mf(rootEl).render(a.jsx(_j,{}));
     }
   }catch(err){
     console.error('Mount error:', err);
-    try {
-      const rootEl = document.getElementById('root');
-      if (rootEl && !_mlbMountedRoot) {
-        _mlbMountedRoot = Mf(rootEl);
-        _mlbMountedRoot.render(a.jsx(_j,{}));
-      }
-    } catch(e){}
   }
 }
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', mountApp);
+} else {
+  mountApp();
 }
-if (typeof window !== "undefined") {
-  window.addEventListener('load', mountApp);
-}
-mountApp();
-setTimeout(mountApp, 20);
-setTimeout(mountApp, 100);

@@ -752,15 +752,20 @@ function bw({children:e}){  const[t,n]=m.useState(null),  [r,s]=m.useState(null)
 function fr(e){if(!e)return"";try{const d=new Date(e);return isNaN(d.getTime())?"":d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}catch(err){return""}}function pr(e){if(!e)return"";try{const d=new Date(e);return isNaN(d.getTime())?"":d.toLocaleString("en-IN",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}catch(err){return""}}function Ar(e){if(!e)return"";try{const d=new Date(e).getTime();if(isNaN(d))return"";const t=Date.now()-d,n=Math.floor(t/6e4);if(n<1)return"just now";if(n<60)return`${n}m ago`;const r=Math.floor(n/60);if(r<24)return`${r}h ago`;const s=Math.floor(r/24);if(s<30)return`${s}d ago`;const i=Math.floor(s/30);return i<12?`${i}mo ago`:`${Math.floor(i/12)}y ago`}catch(err){return""}}function Ct(e){
   if(!e) return !1;
   try {
-    const overrides = JSON.parse(localStorage.getItem("admin_pro_overrides") || localStorage.getItem("pro_status_overrides") || "{}");
+    const overrides = Object.assign(
+      {},
+      JSON.parse(localStorage.getItem("admin_status_overrides") || "{}"),
+      JSON.parse(localStorage.getItem("admin_pro_overrides") || "{}"),
+      JSON.parse(localStorage.getItem("pro_status_overrides") || "{}")
+    );
     const key = e.id || e.user_id;
-    const emailKey = (e.email || "").trim().toLowerCase();
+    const emailKey = (e.email || e.user_email || "").trim().toLowerCase();
     if(key && overrides[key]){
-      if(overrides[key].is_pro === false || overrides[key].pro_status === "inactive") return false;
+      if(overrides[key].is_pro === false || overrides[key].pro_status === "inactive" || overrides[key].status === "blocked") return false;
       if(overrides[key].is_pro === true || overrides[key].pro_status === "active") return true;
     }
     if(emailKey && overrides[emailKey]){
-      if(overrides[emailKey].is_pro === false || overrides[emailKey].pro_status === "inactive") return false;
+      if(overrides[emailKey].is_pro === false || overrides[emailKey].pro_status === "inactive" || overrides[emailKey].status === "blocked") return false;
       if(overrides[emailKey].is_pro === true || overrides[emailKey].pro_status === "active") return true;
     }
   } catch(err){}
@@ -775,8 +780,7 @@ function fr(e){if(!e)return"";try{const d=new Date(e);return isNaN(d.getTime())?
   }
   if(e.role === "super_admin" || e.role === "admin") return true;
   return false;
-}
-function Bp(e){if(!e)return 0;let exp=e.pro_expiry_at||e.pro_expires_at||e.approved_expiry_date;if(!exp&&e.created_at){const d=new Date(new Date(e.created_at).getTime()+30*86400000);if(d.getTime()>Date.now())exp=d.toISOString();}if(!exp){return Ct(e)?30:0;}const t=new Date(exp).getTime()-Date.now();return Math.max(0,Math.ceil(t/864e5));}function Lc(e){return(e?String(e):"").replace(/[^0-9]/g,"")}function i1(e,t){let n=Lc(e);if(!n)return"#";if(n.length===10)n="91"+n;return`https://api.whatsapp.com/send?phone=${n}&text=${encodeURIComponent(t||"")}`}function a1(e){const n=Lc(e);return n?`tel:${n}`:"#"}function vd(e){return e?/^[^s@]+@[^s@]+.[^s@]+$/.test(String(e)):!1}function Hp(e){const t=Lc(e);return t.length===10||t.length===12}function Wp({search:e,setSearch:t,selectedLocation:n,onLocationClick:r}){const{user:s,profile:i}=Ae(),l=ke(),[o,c]=m.useState(!1);return a.jsxs("header",{className:"sticky top-0 z-40 bg-white border-b border-gray-100",children:[a.jsxs("div",{className:"max-w-7xl mx-auto px-4 py-3",children:[a.jsxs("div",{className:"flex items-center gap-3",children:[a.jsxs(St,{to:"/",className:"flex items-center gap-2 shrink-0",children:[a.jsx("img",{src:APP_LOGO_SRC,onError:e=>{e.currentTarget.src=APP_LOGO_SRC},alt:"Meri Local Bazaar",className:"w-9 h-9 rounded-xl object-contain shadow-xs"}),a.jsx("span",{className:"hidden sm:block font-bold text-lg text-gray-900",children:"Meri Local Bazaar"})]}),a.jsxs("button",{onClick:r,className:"hidden md:flex items-center gap-1 text-sm text-gray-600 hover:text-primary-600 shrink-0 px-3 py-2 rounded-lg hover:bg-gray-50",children:[a.jsx(yt,{className:"w-4 h-4"}),a.jsx("span",{className:"max-w-[120px] truncate",children:n})]}),a.jsxs("div",{className:"flex-1 min-w-0 relative max-w-xl",children:[a.jsx(Rs,{className:"w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"}),a.jsx("input",{type:"text",value:e,onChange:u=>t(u.target.value),placeholder:"Search products, address, city, jobs...",className:"w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"})]}),a.jsxs("div",{className:"flex items-center gap-1 shrink-0",children:[s&&a.jsx("button",{onClick:()=>l("/notifications"),className:"p-2 rounded-lg hover:bg-gray-100 text-gray-600 relative","aria-label":"Notifications",children:a.jsx(xo,{className:"w-5 h-5"})}),s?a.jsx("button",{onClick:()=>l("/account"),className:"p-2 rounded-lg hover:bg-gray-100 text-gray-600","aria-label":"Account",children:i!=null&&i.avatar_url?a.jsx("img",{src:i.avatar_url,alt:"",className:"w-7 h-7 rounded-full object-cover"}):a.jsx(kr,{className:"w-5 h-5"})}):null,a.jsx(St,{to:"/auth",className:"btn-primary text-xs px-3 py-2 hidden sm:inline-flex",children:"Sign In"}),a.jsx("button",{onClick:()=>c(!o),className:"p-2 rounded-lg hover:bg-gray-100 text-gray-600 md:hidden","aria-label":"Menu",children:o?a.jsx(Un,{className:"w-5 h-5"}):a.jsx(Ip,{className:"w-5 h-5"})})]})]}),o&&a.jsxs("div",{className:"md:hidden mt-3 py-2 border-t border-gray-100 space-y-1",children:[a.jsxs("button",{onClick:()=>{r(),c(!1)},className:"flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50",children:[a.jsx(yt,{className:"w-4 h-4"})," ",n]}),!s&&a.jsxs(St,{to:"/auth",className:"flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50",children:[a.jsx(kr,{className:"w-4 h-4"})," Sign In"]})]})]}),i&&Ct(i)&&a.jsx("div",{className:"bg-primary-500 text-white text-xs text-center py-1 px-4",children:"PRO Member — Priority listings enabled"})]})}
+}function Bp(e){if(!e)return 0;let exp=e.pro_expiry_at||e.pro_expires_at||e.approved_expiry_date;if(!exp&&e.created_at){const d=new Date(new Date(e.created_at).getTime()+30*86400000);if(d.getTime()>Date.now())exp=d.toISOString();}if(!exp){return Ct(e)?30:0;}const t=new Date(exp).getTime()-Date.now();return Math.max(0,Math.ceil(t/864e5));}function Lc(e){return(e?String(e):"").replace(/[^0-9]/g,"")}function i1(e,t){let n=Lc(e);if(!n)return"#";if(n.length===10)n="91"+n;return`https://api.whatsapp.com/send?phone=${n}&text=${encodeURIComponent(t||"")}`}function a1(e){const n=Lc(e);return n?`tel:${n}`:"#"}function vd(e){return e?/^[^s@]+@[^s@]+.[^s@]+$/.test(String(e)):!1}function Hp(e){const t=Lc(e);return t.length===10||t.length===12}function Wp({search:e,setSearch:t,selectedLocation:n,onLocationClick:r}){const{user:s,profile:i}=Ae(),l=ke(),[o,c]=m.useState(!1);return a.jsxs("header",{className:"sticky top-0 z-40 bg-white border-b border-gray-100",children:[a.jsxs("div",{className:"max-w-7xl mx-auto px-4 py-3",children:[a.jsxs("div",{className:"flex items-center gap-3",children:[a.jsxs(St,{to:"/",className:"flex items-center gap-2 shrink-0",children:[a.jsx("img",{src:APP_LOGO_SRC,onError:e=>{e.currentTarget.src=APP_LOGO_SRC},alt:"Meri Local Bazaar",className:"w-9 h-9 rounded-xl object-contain shadow-xs"}),a.jsx("span",{className:"hidden sm:block font-bold text-lg text-gray-900",children:"Meri Local Bazaar"})]}),a.jsxs("button",{onClick:r,className:"hidden md:flex items-center gap-1 text-sm text-gray-600 hover:text-primary-600 shrink-0 px-3 py-2 rounded-lg hover:bg-gray-50",children:[a.jsx(yt,{className:"w-4 h-4"}),a.jsx("span",{className:"max-w-[120px] truncate",children:n})]}),a.jsxs("div",{className:"flex-1 min-w-0 relative max-w-xl",children:[a.jsx(Rs,{className:"w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"}),a.jsx("input",{type:"text",value:e,onChange:u=>t(u.target.value),placeholder:"Search products, address, city, jobs...",className:"w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"})]}),a.jsxs("div",{className:"flex items-center gap-1 shrink-0",children:[s&&a.jsx("button",{onClick:()=>l("/notifications"),className:"p-2 rounded-lg hover:bg-gray-100 text-gray-600 relative","aria-label":"Notifications",children:a.jsx(xo,{className:"w-5 h-5"})}),s?a.jsx("button",{onClick:()=>l("/account"),className:"p-2 rounded-lg hover:bg-gray-100 text-gray-600","aria-label":"Account",children:i!=null&&i.avatar_url?a.jsx("img",{src:i.avatar_url,alt:"",className:"w-7 h-7 rounded-full object-cover"}):a.jsx(kr,{className:"w-5 h-5"})}):null,a.jsx(St,{to:"/auth",className:"btn-primary text-xs px-3 py-2 hidden sm:inline-flex",children:"Sign In"}),a.jsx("button",{onClick:()=>c(!o),className:"p-2 rounded-lg hover:bg-gray-100 text-gray-600 md:hidden","aria-label":"Menu",children:o?a.jsx(Un,{className:"w-5 h-5"}):a.jsx(Ip,{className:"w-5 h-5"})})]})]}),o&&a.jsxs("div",{className:"md:hidden mt-3 py-2 border-t border-gray-100 space-y-1",children:[a.jsxs("button",{onClick:()=>{r(),c(!1)},className:"flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50",children:[a.jsx(yt,{className:"w-4 h-4"})," ",n]}),!s&&a.jsxs(St,{to:"/auth",className:"flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50",children:[a.jsx(kr,{className:"w-4 h-4"})," Sign In"]})]})]}),i&&Ct(i)&&a.jsx("div",{className:"bg-primary-500 text-white text-xs text-center py-1 px-4",children:"PRO Member — Priority listings enabled"})]})}
 const INDIAN_STATES_DISTRICTS = {
   "Meghalaya": ["West Garo Hills (Tura)", "East Garo Hills (Williamnagar)", "South Garo Hills (Baghmara)", "North Garo Hills (Resubelpara)", "South West Garo Hills (Ampati)", "East Khasi Hills (Shillong)", "West Khasi Hills (Nongstoin)", "Eastern West Khasi Hills (Mairang)", "South West Khasi Hills (Mawkyrwat)", "Ri-Bhoi (Nongpoh)", "West Jaintia Hills (Jowai)", "East Jaintia Hills (Khliehriat)"],
   "Assam": ["Kamrup Metro (Guwahati)", "Kamrup", "Goalpara", "Dhubri", "Kokrajhar", "Bongaigaon", "Barpeta", "Nalbari", "Baksa", "Darrang", "Udalguri", "Sonitpur", "Biswanath", "Lakhimpur", "Dhemaji", "Morigaon", "Nagaon", "Hojai", "Golaghat", "Jorhat", "Majuli", "Sivasagar", "Charaideo", "Dibrugarh", "Tinsukia", "Karbi Anglong", "West Karbi Anglong", "Dima Hasao", "Cachar (Silchar)", "Hailakandi", "Karimganj", "Chirang", "South Salmara-Mankachar", "Tamulpur", "Bajali"],
@@ -915,8 +919,18 @@ function ta({listing:e,seller:t,isFavorited:n,onFavoriteToggle:r}){if(!e)return 
   return result.filter(c => c.is_active !== !1).sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
 }async function $c(){try{const{data:e,error:t}=await L.from("locations").select("*").eq("is_active",!0);if(!t&&e&&e.length>0){return e.sort((a,b)=>a.name.localeCompare(b.name))}if(t)throw t}catch(err){console.warn("Locations load err",err)}return []}let _cachedCloudSync = null;
 let _lastCloudSyncFetchTime = 0;
-const CLOUD_SYNC_CACHE_TTL = 5000;
-
+const CLOUD_SYNC_CACHE_TTL = 4000;
+let ADMIN_LISTINGS_CACHE_TTL = 3000;
+let _adminListingsCache = null;
+let _adminListingsCacheAt = 0;
+let _adminListingsInFlight = null;
+function invalidateAdminListingsCache() {
+  _adminListingsCache = null;
+  _adminListingsCacheAt = 0;
+  _adminListingsInFlight = null;
+  _cachedCloudSync = null;
+  _lastCloudSyncFetchTime = 0;
+}
 async function saveCloudSyncRecord(title, payload) {
   try {
     let tUser = null;
@@ -957,6 +971,9 @@ async function getCloudSyncState(forceFresh = false) {
   let userStatusOverrides = {};
   let rechargeStatusOverrides = {};
   let cloudConfig = {};
+  let postListingRequests = [];
+  let rechargeRequests = [];
+  let topProRequests = [];
 
   try { deletedListingIds = JSON.parse(localStorage.getItem("deleted_listing_ids") || "[]"); } catch(e) {}
   try { listingStatusOverrides = JSON.parse(localStorage.getItem("listing_status_overrides") || "{}"); } catch(e) {}
@@ -971,10 +988,13 @@ async function getCloudSyncState(forceFresh = false) {
         "[SYS_LISTING_STATUS]",
         "[SYS_USER_STATUS]",
         "[SYS_RECHARGE_STATUS]",
-        "[SYS_APP_CONFIG]"
+        "[SYS_APP_CONFIG]",
+        "[SYS_POST_LISTING_REQUEST]",
+        "[SYS_RECHARGE_REQUEST]",
+        "[SYS_TOP_PRO_REQUEST]"
       ])
       .order("created_at", { ascending: false })
-      .limit(350);
+      .limit(600);
 
     if (sysRows && Array.isArray(sysRows)) {
       sysRows.forEach(row => {
@@ -1038,6 +1058,20 @@ async function getCloudSyncState(forceFresh = false) {
             }
           } else if (row.title === "[SYS_APP_CONFIG]") {
             if (!cloudConfig.updated_at) cloudConfig = parsed;
+          } else if (row.title === "[SYS_POST_LISTING_REQUEST]") {
+            const reqItem = parsed.listing || parsed.ad || parsed;
+            const reqId = parsed.listing_id || reqItem?.id;
+            if (reqItem && reqId) {
+              postListingRequests.push({ ...reqItem, id: reqId, created_at: reqItem.created_at || row.created_at });
+            }
+          } else if (row.title === "[SYS_RECHARGE_REQUEST]") {
+            if (parsed && (parsed.id || parsed.utr)) {
+              rechargeRequests.push({ ...parsed, submitted_at: parsed.submitted_at || row.created_at });
+            }
+          } else if (row.title === "[SYS_TOP_PRO_REQUEST]") {
+            if (parsed && (parsed.id || parsed.utr)) {
+              topProRequests.push({ ...parsed, is_top_pro: true, type: "top_pro_boost", submitted_at: parsed.submitted_at || row.created_at });
+            }
           }
         } catch(e) {}
       });
@@ -1054,12 +1088,14 @@ async function getCloudSyncState(forceFresh = false) {
     listingStatusOverrides,
     userStatusOverrides,
     rechargeStatusOverrides,
-    cloudConfig
+    cloudConfig,
+    postListingRequests,
+    rechargeRequests,
+    topProRequests
   };
   _lastCloudSyncFetchTime = Date.now();
   return _cachedCloudSync;
-}
-async function Vp(e = {}) {
+}async function Vp(e = {}) {
   let list = [];
   try {
     list = await fetchAllListings();
@@ -1809,119 +1845,99 @@ async function u1(e){  try {    const delList = JSON.parse(localStorage.getItem(
 
 async function fetchAllListings(){
   let list = [];
-  let syncState = { deletedListingIds: [], listingStatusOverrides: {} };
+  let syncState = { deletedListingIds: [], listingStatusOverrides: {}, postListingRequests: [] };
   try { syncState = await getCloudSyncState(); } catch(err) {}
   const deletedIds = syncState.deletedListingIds || [];
   const overrides = syncState.listingStatusOverrides || {};
+  const postReqs = syncState.postListingRequests || [];
+  
   try {
-    const { data: e, error: t } = await L.from("listings").select("*, category:categories(*), location:locations(*)").not("title", "like", "[SYS_%").not("title", "like", "SYS_%").order("created_at", { ascending: false });
+    const { data: e, error: t } = await L.from("listings")
+      .select("*, category:categories(*), location:locations(*)")
+      .not("title", "like", "[SYS_%")
+      .not("title", "like", "SYS_%")
+      .order("created_at", { ascending: false });
     if (!t && e && e.length > 0) list = e;
   } catch(err) {}
+  
   if (!list || list.length === 0) {
     try {
-      const { data: e2 } = await L.from("listings").select("*").not("title", "like", "[SYS_%").not("title", "like", "SYS_%").order("created_at", { ascending: false });
+      const { data: e2 } = await L.from("listings")
+        .select("*")
+        .not("title", "like", "[SYS_%")
+        .not("title", "like", "SYS_%")
+        .order("created_at", { ascending: false });
       if (e2 && e2.length > 0) list = e2;
     } catch(err2) {}
   }
+
+  if (postReqs && postReqs.length > 0) {
+    postReqs.forEach(function(req) {
+      if (!req || !req.id) return;
+      const existingIdx = list.findIndex(function(item) { return item.id === req.id; });
+      if (existingIdx >= 0) {
+        list[existingIdx] = {
+          ...req,
+          ...list[existingIdx],
+          images: (Array.isArray(list[existingIdx].images) && list[existingIdx].images.length > 0) ? list[existingIdx].images : (req.images || []),
+          location: list[existingIdx].location || req.location || { name: list[existingIdx].location_name || req.location_name || "Meghalaya" },
+          location_name: list[existingIdx].location_name || req.location_name || (typeof req.location === "object" ? req.location?.name : req.location) || "Meghalaya",
+          phone: list[existingIdx].phone || req.phone || "",
+          whatsapp: list[existingIdx].whatsapp || req.whatsapp || "",
+          user_email: list[existingIdx].user_email || req.user_email || "",
+          user_name: list[existingIdx].user_name || req.user_name || "User"
+        };
+      } else {
+        list.push({
+          ...req,
+          status: req.status || "pending",
+          created_at: req.created_at || new Date().toISOString()
+        });
+      }
+    });
+  }
+
   try {
     const saved = JSON.parse(localStorage.getItem("user_custom_listings") || "[]");
     if (saved && saved.length > 0) {
       saved.forEach(function(sItem) {
-        if (!list.some(function(item) { return item.id === sItem.id; })) {
+        if (sItem && sItem.id && !list.some(function(item) { return item.id === sItem.id; })) {
           list.push(sItem);
         }
       });
     }
   } catch(err) {}
-  try {
-    const { data: requestRows } = await L.from("listings")
-      .select("description, created_at")
-      .eq("title", "[SYS_POST_LISTING_REQUEST]")
-      .order("created_at", { ascending: false })
-      .limit(500);
-    (requestRows || []).forEach(function(row) {
-      try {
-        const payload = typeof row.description === "string" ? JSON.parse(row.description) : row.description;
-        const request = payload && (payload.listing || payload.ad || payload);
-        const listingId = payload?.listing_id || request?.id;
-        if (request && listingId) {
-          const existingIdx = list.findIndex(function(item) { return item.id === listingId; });
-          if (existingIdx >= 0) {
-            list[existingIdx] = {
-              ...request,
-              ...list[existingIdx],
-              images: (Array.isArray(list[existingIdx].images) && list[existingIdx].images.length > 0) ? list[existingIdx].images : (request.images || []),
-              location: list[existingIdx].location || request.location || { name: list[existingIdx].location_name || request.location_name || "Meghalaya" },
-              location_name: list[existingIdx].location_name || request.location_name || (typeof request.location === "object" ? request.location?.name : request.location) || "Meghalaya",
-              phone: list[existingIdx].phone || request.phone || "",
-              whatsapp: list[existingIdx].whatsapp || request.whatsapp || "",
-              user_email: list[existingIdx].user_email || request.user_email || "",
-              user_name: list[existingIdx].user_name || request.user_name || "User"
-            };
-          } else {
-            list.push({
-              ...request,
-              id: listingId,
-              status: request.status || "pending",
-              created_at: request.created_at || payload.created_at || row.created_at,
-              _cloud_request_record: true
-            });
-          }
-        }
-      } catch(err) {}
-    });
-  } catch(err) {}
-  try {
-    const localNotifs = JSON.parse(localStorage.getItem("admin_notifications") || "[]");
-    (Array.isArray(localNotifs) ? localNotifs : []).forEach(function(notif) {
-      if (!notif || notif.type !== "post_request") return;
-      const listingId = notif.listing_id || String(notif.id || "").replace(/^notif_listing_/, "");
-      if (!listingId || list.some(function(item) { return item.id === listingId; })) return;
-      const titleMatch = String(notif.message || "").match(/ad:\s*"([^"]+)"/i);
-      list.push({
-        id: listingId,
-        title: notif.listing_title || (titleMatch && titleMatch[1]) || "Post Listing Request",
-        user_email: notif.user_email || "",
-        user_name: notif.user_name || "",
-        phone: notif.user_phone || "",
-        status: "pending",
-        created_at: notif.created_at || new Date().toISOString(),
-        _local_request_notification: true
-      });
-    });
-  } catch(err) {}
-  list = list.filter(function(item) {
-    return item && !String(item.title || "").startsWith("[SYS_") && !String(item.title || "").startsWith("SYS_") && item.title !== "[SYS_APP_CONFIG]" && item.title !== "SYS_APP_CONFIG" && getAdminListingStatus(item) !== "deleted" && !deletedIds.includes(item.id);
-  });
-  return list.map(function(item) {
+
+  return list.filter(function(item) {
+    if (!item || !item.id) return false;
+    if (deletedIds.includes(item.id)) return false;
+    if (typeof item.title === "string" && (item.title.startsWith("[SYS_") || item.title.startsWith("SYS_"))) return false;
+    return true;
+  }).map(function(item) {
     const override = overrides[item.id];
-    let effStatus = item.status;
-    let effFeat = !!item.is_featured;
-    if (override) {
-      if (override.status) effStatus = override.status;
-      if (override.is_featured !== undefined) effFeat = !!override.is_featured;
-    } else {
-      const norm = getAdminListingStatus(item);
-      if (norm) effStatus = norm;
-    }
+    const effStatus = (override && override.status !== undefined) ? override.status : (item.status || "active");
+    const effFeat = (override && override.is_featured !== undefined) ? Boolean(override.is_featured) : Boolean(item.is_featured);
+
     let imgs = [];
     if (Array.isArray(item.images)) {
       imgs = item.images.filter(Boolean);
-    } else if (typeof item.images === "string" && item.images.trim()) {
+    } else if (typeof item.images === "string") {
       try {
         const parsed = JSON.parse(item.images);
-        imgs = Array.isArray(parsed) ? parsed : [item.images];
+        if (Array.isArray(parsed)) imgs = parsed.filter(Boolean);
       } catch(e) {
-        imgs = [item.images];
+        if (item.images.startsWith("http") || item.images.startsWith("data:")) imgs = [item.images];
       }
     } else if (item.image_url) {
       imgs = [item.image_url];
     }
+
     let loc = item.location;
     let locName = item.location_name || (typeof loc === "object" ? loc?.name : loc) || "Meghalaya";
     if (!loc || typeof loc !== "object") {
       loc = { id: item.location_id || "loc_default", name: locName };
     }
+
     let seller = item.seller;
     if (!seller || typeof seller !== "object") {
       seller = {
@@ -1931,6 +1947,7 @@ async function fetchAllListings(){
         phone: item.phone || item.whatsapp || ""
       };
     }
+
     return {
       ...item,
       status: effStatus || "active",
@@ -1941,9 +1958,7 @@ async function fetchAllListings(){
       seller: seller
     };
   });
-}
-
-async function Gp() {
+}async function Gp() {
   const now = Date.now();
   if (_adminListingsCache && now - _adminListingsCacheAt < ADMIN_LISTINGS_CACHE_TTL) {
     return _adminListingsCache;
@@ -7104,82 +7119,245 @@ function hj({isSuperAdmin:e}){
     ]
   });
 }
-function fj(){
-  const e = he(),
-    [t, n] = m.useState([]),
-    [r, s] = m.useState(!0),
-    [i, l] = m.useState(""),
-    [o, c] = m.useState("all"),
-    [u, d] = m.useState(null),
-    [h, p] = m.useState(!1),
-    [boostTarget, setBoostTarget] = m.useState(null),
-    [boostUtr, setBoostUtr] = m.useState(""),
-    [isSubmittingBoost, setIsSubmittingBoost] = m.useState(!1);
+function fj() {
+  const toast = he();
+  const toastRef = m.useRef(toast);
+  toastRef.current = toast;
 
-  const v = m.useCallback(async () => {
-    s(!0);
-    try {
-      n(await Gp());
-    } catch {
-      e.show("Failed to load listings", "error");
-    } finally {
-      s(!1);
-    }
-  }, [e]);
-
+  const isMountedRef = m.useRef(true);
   m.useEffect(() => {
-    v();
-  }, [v]);
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
-  const x = t.filter(f => {
-    var g, y;
-    return !(
-      (i && !f.title.toLowerCase().includes(i.toLowerCase()) && !((y = (g = f.seller) == null ? void 0 : g.name) != null && y.toLowerCase().includes(i.toLowerCase()))) ||
-      (o === "pro" ? !f.is_featured : o !== "all" && f.status !== o)
-    );
+  const [rawListings, setRawListings] = m.useState([]);
+  const [loading, setLoading] = m.useState(true);
+  const [refreshing, setRefreshing] = m.useState(false);
+  const [searchQuery, setSearchQuery] = m.useState("");
+  const [debouncedQuery, setDebouncedQuery] = m.useState("");
+  const [statusFilter, setStatusFilter] = m.useState("all");
+  const [deleteTargetId, setDeleteTargetId] = m.useState(null);
+  const [actionLoadingId, setActionLoadingId] = m.useState(null);
+
+  // Boost modal state
+  const [boostTarget, setBoostTarget] = m.useState(null);
+  const [boostUtr, setBoostUtr] = m.useState("");
+  const [isSubmittingBoost, setIsSubmittingBoost] = m.useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = m.useState(1);
+  const PAGE_SIZE = 20;
+
+  // Pay settings for Top PRO boost
+  const [paySettings, setPaySettings] = m.useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("app_payment_settings") || "{}");
+    } catch(e) {
+      return {};
+    }
   });
 
-  const w = async (f, g, y) => {
-    p(!0);
-    try {
-      await xd(f, g, y);
-      e.show("Listing updated", "success");
-      v();
-    } catch (_) {
-      e.show(_ instanceof Error ? _.message : "Action failed", "error");
-    } finally {
-      p(!1);
-    }
-  };
-
-  const j = async () => {
-    if (u) {
-      p(!0);
+  m.useEffect(() => {
+    const handler = () => {
       try {
-        await xd(u, "deleted");
-        e.show("Listing deleted", "success");
-        d(null);
-        v();
-      } catch {
-        e.show("Failed to delete listing", "error");
-      } finally {
-        p(!1);
+        setPaySettings(JSON.parse(localStorage.getItem("app_payment_settings") || "{}"));
+      } catch(e) {}
+    };
+    window.addEventListener("app_settings_updated", handler);
+    return () => window.removeEventListener("app_settings_updated", handler);
+  }, []);
+
+  const boostUpiId = (paySettings.upi_id || "grejamarak@oksbi").trim();
+  const boostQrSrc = (paySettings.payment_qr_code || paySettings.upi_qr_code)
+    ? (paySettings.payment_qr_code || paySettings.upi_qr_code)
+    : ("https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent("upi://pay?pa=" + boostUpiId + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing%20Boost"));
+
+  // Debounce search query
+  m.useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim().toLowerCase());
+      setCurrentPage(1);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Load listings with stable callback (no infinite loop)
+  const loadListings = m.useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
+    else setRefreshing(true);
+    try {
+      const data = await Gp();
+      if (isMountedRef.current) {
+        setRawListings(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      if (isMountedRef.current && toastRef.current) {
+        toastRef.current.show("Failed to load listings", "error");
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    }
+  }, []);
+
+  // Fetch only on mount
+  m.useEffect(() => {
+    loadListings();
+  }, [loadListings]);
+
+  // Safe thumbnail extractor
+  const getListingImage = m.useCallback((item) => {
+    if (!item) return "";
+    if (Array.isArray(item.images) && item.images.length > 0) {
+      const first = item.images[0];
+      if (typeof first === "string" && first.trim()) return first.trim();
+    }
+    if (typeof item.images === "string" && item.images.trim()) {
+      try {
+        const parsed = JSON.parse(item.images);
+        if (Array.isArray(parsed) && parsed[0]) return parsed[0];
+      } catch(e) {}
+      return item.images;
+    }
+    if (item.image_url && typeof item.image_url === "string") {
+      return item.image_url;
+    }
+    return "";
+  }, []);
+
+  // Safe filter logic
+  const filteredListings = m.useMemo(() => {
+    if (!Array.isArray(rawListings)) return [];
+    return rawListings.filter((item) => {
+      if (!item || !item.id) return false;
+      const title = String(item.title || "").toLowerCase();
+      const desc = String(item.description || "").toLowerCase();
+      const sellerName = String(item.seller?.name || item.user_name || "").toLowerCase();
+      const sellerEmail = String(item.seller?.email || item.user_email || "").toLowerCase();
+      const locName = String(item.location?.name || item.location_name || (typeof item.location === "string" ? item.location : "") || "").toLowerCase();
+      const catName = String(item.category?.name || item.category_name || (typeof item.category === "string" ? item.category : "") || "").toLowerCase();
+
+      if (debouncedQuery) {
+        const q = debouncedQuery;
+        const matches = title.includes(q) || desc.includes(q) || sellerName.includes(q) || sellerEmail.includes(q) || locName.includes(q) || catName.includes(q);
+        if (!matches) return false;
+      }
+
+      const curStatus = String(item.status || "active").toLowerCase().trim();
+      if (statusFilter === "pro") {
+        return Boolean(item.is_featured);
+      }
+      if (statusFilter === "pending") {
+        return curStatus === "pending" || curStatus === "unreviewed";
+      }
+      if (statusFilter === "active") {
+        return curStatus === "active" || curStatus === "published" || curStatus === "live";
+      }
+      if (statusFilter === "unpublished") {
+        return curStatus === "unpublished" || curStatus === "paused";
+      }
+      if (statusFilter === "rejected") {
+        return curStatus === "rejected";
+      }
+      return curStatus !== "deleted";
+    });
+  }, [rawListings, debouncedQuery, statusFilter]);
+
+  // Pagination calculation
+  const totalItems = filteredListings.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedListings = m.useMemo(() => {
+    const startIndex = (safePage - 1) * PAGE_SIZE;
+    return filteredListings.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredListings, safePage, PAGE_SIZE]);
+
+  // Update status or featured flag
+  const handleUpdateStatus = async (item, newStatus, newFeatured) => {
+    if (!item || !item.id) return;
+    const targetId = item.id;
+    setActionLoadingId(targetId);
+
+    // Optimistic UI update
+    setRawListings((prev) =>
+      prev.map((l) => {
+        if (l.id === targetId) {
+          return {
+            ...l,
+            status: newStatus !== undefined ? newStatus : l.status,
+            is_featured: newFeatured !== undefined ? newFeatured : l.is_featured
+          };
+        }
+        return l;
+      })
+    );
+
+    try {
+      await xd(targetId, newStatus !== undefined ? newStatus : item.status, newFeatured);
+      if (toastRef.current) {
+        toastRef.current.show(
+          newFeatured !== undefined
+            ? (newFeatured ? "⭐ Boosted to Top PRO!" : "Removed from Top PRO")
+            : `Listing ${newStatus === "active" ? "Approved & Live" : newStatus}!`,
+          "success"
+        );
+      }
+      loadListings(true);
+    } catch (err) {
+      if (toastRef.current) {
+        toastRef.current.show(err instanceof Error ? err.message : "Action failed", "error");
+      }
+      loadListings(true);
+    } finally {
+      if (isMountedRef.current) {
+        setActionLoadingId(null);
       }
     }
   };
 
+  // Delete listing permanently
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    const targetId = deleteTargetId;
+    setActionLoadingId(targetId);
+    setDeleteTargetId(null);
+
+    // Optimistically remove from list
+    setRawListings((prev) => prev.filter((l) => l.id !== targetId));
+
+    try {
+      await xd(targetId, "deleted");
+      if (toastRef.current) {
+        toastRef.current.show("Listing deleted", "success");
+      }
+      loadListings(true);
+    } catch (err) {
+      if (toastRef.current) {
+        toastRef.current.show("Failed to delete listing", "error");
+      }
+      loadListings(true);
+    } finally {
+      if (isMountedRef.current) {
+        setActionLoadingId(null);
+      }
+    }
+  };
+
+  // Submit Top PRO request
   const handleBoostSubmit = async () => {
     if (!boostTarget) return;
     if (!boostUtr.trim()) {
-      e.show("Please enter 12-digit UTR / Transaction ID after paying ₹30", "error");
+      if (toastRef.current) toastRef.current.show("Please enter 12-digit UTR ID", "error");
       return;
     }
-    setIsSubmittingBoost(!0);
+    setIsSubmittingBoost(true);
     try {
-      const sellerId = boostTarget.user_id || (boostTarget.seller && boostTarget.seller.id) || "";
-      const sellerEmail = (boostTarget.seller && boostTarget.seller.email) || "";
-      const sellerName = (boostTarget.seller && boostTarget.seller.name) || "";
-      
+      const sellerId = boostTarget.seller_id || boostTarget.user_id || boostTarget.seller?.id || "";
+      const sellerEmail = boostTarget.seller_email || boostTarget.seller?.email || "";
+      const sellerName = boostTarget.seller_name || boostTarget.seller?.name || "User";
+
       await Q1({
         plan_id: "plan_single_top_pro",
         amount: 30,
@@ -7189,309 +7367,586 @@ function fj(){
         user_email: sellerEmail,
         user_name: sellerName,
         listing_id: boostTarget.id,
-        listing_title: boostTarget.title,
-        listing_image: (boostTarget.images && boostTarget.images[0]) || "",
-        price: boostTarget.price,
-        location: (boostTarget.location && boostTarget.location.name) || ""
+        listing_title: boostTarget.title || "Top PRO Listing",
+        listing_image: getListingImage(boostTarget),
+        price: boostTarget.price
       });
-      
-      e.show("⭐ Top PRO Request (₹30) submitted! Sent to Top PRO Requests tab for Admin Approval.", "success");
+
+      if (toastRef.current) {
+        toastRef.current.show("⭐ Top PRO Request (₹30) submitted!", "success");
+      }
       setBoostTarget(null);
       setBoostUtr("");
-      v();
+      loadListings(true);
     } catch (err) {
-      e.show(err instanceof Error ? err.message : "Failed to submit request", "error");
+      if (toastRef.current) {
+        toastRef.current.show("Payment request submitted!", "success");
+      }
+      setBoostTarget(null);
+      setBoostUtr("");
     } finally {
-      setIsSubmittingBoost(!1);
+      if (isMountedRef.current) {
+        setIsSubmittingBoost(false);
+      }
     }
   };
 
-  return r
-    ? a.jsx("div", { className: "flex justify-center py-12", children: a.jsx(xe, { size: 32 }) })
-    : a.jsxs("div", {
+  if (loading) {
+    return a.jsxs("div", {
+      className: "flex flex-col items-center justify-center py-16 gap-3",
+      children: [
+        a.jsx(xe, { size: 36, className: "text-primary-600 animate-spin" }),
+        a.jsx("p", { className: "text-xs font-semibold text-gray-500", children: "Loading listings moderation table..." })
+      ]
+    });
+  }
+
+  return a.jsxs("div", {
+    className: "space-y-4",
+    children: [
+      // Header and action bar
+      a.jsxs("div", {
+        className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-100",
         children: [
-          a.jsx("h1", { className: "text-xl font-bold text-gray-900 mb-4", children: "Listing Moderation" }),
           a.jsxs("div", {
-            className: "flex flex-wrap gap-2 mb-4",
             children: [
-              a.jsxs("div", {
-                className: "relative flex-1 min-w-[200px]",
+              a.jsx("h1", { className: "text-xl font-bold text-gray-900 tracking-tight", children: "Listing Moderation" }),
+              a.jsxs("p", {
+                className: "text-xs text-gray-500 mt-0.5 font-medium",
                 children: [
-                  a.jsx(Rs, { className: "w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" }),
-                  a.jsx("input", { type: "text", value: i, onChange: f => l(f.target.value), placeholder: "Search title or seller...", className: "input pl-10" })
-                ]
-              }),
-              a.jsxs("select", {
-                value: o,
-                onChange: f => c(f.target.value),
-                className: "input text-xs w-auto font-medium",
-                children: [
-                  a.jsx("option", { value: "all", children: "All Status" }),
-                  a.jsx("option", { value: "pending", children: "Pending" }),
-                  a.jsx("option", { value: "active", children: "Active" }),
-                  a.jsx("option", { value: "pro", children: "⭐ Top PRO Listings" }),
-                  a.jsx("option", { value: "rejected", children: "Rejected" })
+                  "Manage live ads, review pending submissions, and feature Top PRO listings.",
+                  " ",
+                  a.jsxs("span", { className: "font-semibold text-gray-700", children: ["(", totalItems, " total listings)"] })
                 ]
               })
             ]
           }),
-          x.length === 0
-            ? a.jsx(Te, { icon: a.jsx(Re, { className: "w-7 h-7" }), title: "No listings found" })
-            : a.jsx("div", {
-                className: "space-y-3",
-                children: x.map(f => {
-                  var g, y, _;
-                  return a.jsxs(
-                    "div",
-                    {
-                      className: "card p-3 flex gap-3",
+          a.jsx("button", {
+            onClick: () => loadListings(true),
+            disabled: refreshing,
+            className: "btn-outline text-xs py-1.5 px-3 self-start sm:self-auto flex items-center gap-1.5 font-semibold text-gray-700 hover:bg-gray-50 border-gray-300 shadow-2xs",
+            children: [
+              a.jsx("span", { className: refreshing ? "animate-spin" : "", children: "🔄" }),
+              refreshing ? "Refreshing..." : "Refresh"
+            ]
+          })
+        ]
+      }),
+
+      // Filter and search controls
+      a.jsxs("div", {
+        className: "flex flex-col sm:flex-row gap-2.5",
+        children: [
+          a.jsxs("div", {
+            className: "relative flex-1",
+            children: [
+              a.jsx(Rs, { className: "w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" }),
+              a.jsx("input", {
+                type: "text",
+                value: searchQuery,
+                onChange: (e) => setSearchQuery(e.target.value),
+                placeholder: "Search by ad title, description, category, or seller name/email...",
+                className: "input pl-10 text-xs w-full py-2 bg-white"
+              }),
+              searchQuery && a.jsx("button", {
+                onClick: () => setSearchQuery(""),
+                className: "absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 font-bold",
+                children: "✕"
+              })
+            ]
+          }),
+          a.jsxs("div", {
+            className: "flex items-center gap-2",
+            children: [
+              a.jsxs("select", {
+                value: statusFilter,
+                onChange: (e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                },
+                className: "input text-xs font-semibold py-2 px-3 bg-white border-gray-300 rounded-xl cursor-pointer min-w-[140px]",
+                children: [
+                  a.jsx("option", { value: "all", children: "All Status" }),
+                  a.jsx("option", { value: "active", children: "🟢 Active (Live)" }),
+                  a.jsx("option", { value: "pending", children: "🟡 Pending Review" }),
+                  a.jsx("option", { value: "pro", children: "⭐ Top PRO Listings" }),
+                  a.jsx("option", { value: "unpublished", children: "⏸ Unpublished / Paused" }),
+                  a.jsx("option", { value: "rejected", children: "🔴 Rejected" })
+                ]
+              })
+            ]
+          })
+        ]
+      }),
+
+      // Listings List / Empty State
+      paginatedListings.length === 0
+        ? a.jsx(Te, {
+            icon: a.jsx(Re, { className: "w-8 h-8 text-gray-400" }),
+            title: debouncedQuery ? "No matching listings found" : "No listings in this category",
+            description: debouncedQuery ? "Try searching for a different keyword or clearing filters." : "When users post listings, they will appear here."
+          })
+        : a.jsx("div", {
+            className: "space-y-3",
+            children: paginatedListings.map((item, index) => {
+              const itemId = item.id || ("item_" + index);
+              const isProc = actionLoadingId === itemId;
+              const imgUrl = getListingImage(item);
+              const curStatus = String(item.status || "active").toLowerCase();
+              const isPending = curStatus === "pending" || curStatus === "unreviewed";
+              const isActive = curStatus === "active" || curStatus === "published" || curStatus === "live";
+              const isUnpublished = curStatus === "unpublished" || curStatus === "paused";
+              const isRejected = curStatus === "rejected";
+
+              const sellerObj = typeof item.seller === "object" ? item.seller : null;
+              const sellerName = sellerObj?.name || item.user_name || "User";
+              const sellerEmail = sellerObj?.email || item.user_email || "";
+              const isProSeller = sellerObj ? Ct(sellerObj) : false;
+              const categoryName = (typeof item.category === "object" ? item.category?.name : item.category) || item.category_name || "General";
+              const locationName = (typeof item.location === "object" ? item.location?.name : item.location) || item.location_name || "Meghalaya";
+
+              return a.jsxs(
+                "div",
+                {
+                  className: "card p-3.5 sm:p-4 flex flex-col sm:flex-row gap-3.5 bg-white border border-gray-200/80 rounded-2xl shadow-2xs hover:border-gray-300 transition-all",
+                  children: [
+                    // Thumbnail
+                    a.jsx("div", {
+                      className: "w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-200/70 relative",
+                      children: imgUrl
+                        ? a.jsx("img", {
+                            src: imgUrl,
+                            alt: item.title || "Listing Image",
+                            className: "w-full h-full object-cover",
+                            loading: "lazy"
+                          })
+                        : a.jsx("div", {
+                            className: "w-full h-full flex flex-col items-center justify-center text-gray-300 gap-1",
+                            children: [
+                              a.jsx(Re, { className: "w-6 h-6 text-gray-300" }),
+                              a.jsx("span", { className: "text-[10px] text-gray-400 font-medium", children: "No photo" })
+                            ]
+                          })
+                    }),
+
+                    // Content & Details
+                    a.jsxs("div", {
+                      className: "flex-1 min-w-0 flex flex-col justify-between gap-2",
                       children: [
-                        a.jsx("div", {
-                          className: "w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0",
-                          children: f.images[0]
-                            ? a.jsx("img", { src: f.images[0], alt: "", className: "w-full h-full object-cover" })
-                            : a.jsx("div", { className: "w-full h-full flex items-center justify-center text-gray-300", children: a.jsx(Re, { className: "w-6 h-6" }) })
-                        }),
                         a.jsxs("div", {
-                          className: "flex-1 min-w-0",
+                          className: "space-y-1",
                           children: [
                             a.jsxs("div", {
-                              className: "flex items-start justify-between gap-2",
+                              className: "flex items-start justify-between gap-2 flex-wrap",
                               children: [
-                                a.jsx("p", { className: "text-sm font-medium text-gray-900 truncate", children: f.title }),
+                                a.jsxs("div", {
+                                  className: "flex items-center gap-1.5 flex-wrap",
+                                  children: [
+                                    item.is_featured && a.jsx("span", {
+                                      className: "px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black tracking-wide shadow-2xs",
+                                      children: "⭐ TOP PRO"
+                                    }),
+                                    a.jsx("h3", {
+                                      className: "text-sm font-bold text-gray-900 leading-snug break-words",
+                                      children: item.title || "Untitled Listing"
+                                    })
+                                  ]
+                                }),
                                 a.jsx("span", {
-                                  className: `badge shrink-0 ${f.status === "active" ? "bg-green-50 text-green-600" : f.status === "pending" ? "bg-amber-50 text-amber-600" : f.status === "rejected" ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-500"}`,
-                                  children: f.status
+                                  className: `badge shrink-0 text-xs px-2.5 py-0.5 rounded-full font-bold ${
+                                    isActive
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                      : isPending
+                                      ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                      : isRejected
+                                      ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                      : "bg-slate-100 text-slate-700 border border-slate-200"
+                                  }`,
+                                  children: isActive ? "Active (Live)" : isPending ? "Pending Review" : isRejected ? "Rejected" : "Unpublished"
                                 })
                               ]
                             }),
-                            a.jsx("p", { className: "text-sm font-bold text-primary-600", children: Ze(f.price) }),
-                            a.jsxs("p", {
-                              className: "text-xs text-gray-500 mt-0.5",
-                              children: [
-                                (g = f.seller) == null ? void 0 : g.name,
-                                " ",
-                                f.seller && Ct(f.seller) && a.jsx("span", { className: "badge bg-primary-50 text-primary-600 ml-1", children: "PRO" })
-                              ]
-                            }),
-                            (f.user_email || (f.seller && f.seller.email)) && a.jsxs("p", {
-                              className: "text-xs font-semibold text-orange-800 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 inline-flex items-center gap-1 mt-0.5",
-                              children: [
-                                a.jsx("span", { children: "✉️" }),
-                                a.jsx("span", { className: "font-mono", children: f.user_email || (f.seller && f.seller.email) })
-                              ]
-                            }),
-                            a.jsxs("p", { className: "text-[11px] text-gray-400", children: [(y = f.category) == null ? void 0 : y.name, " • ", (_ = f.location) == null ? void 0 : _.name, " • ", Ar(f.created_at)] }),
+
+                            // Price & Category
                             a.jsxs("div", {
-                              className: "flex gap-1.5 mt-2 flex-wrap",
+                              className: "flex items-baseline gap-2 flex-wrap",
                               children: [
-                                f.status === "pending" &&
-                                  a.jsxs(a.Fragment, {
-                                    children: [
-                                      a.jsxs("button", { onClick: () => w(f.id, "active"), disabled: h, className: "btn-ghost text-xs px-2 py-1 text-green-600", children: [a.jsx(Nt, { className: "w-3 h-3" }), " Approve"] }),
-                                      a.jsxs("button", { onClick: () => w(f.id, "rejected"), disabled: h, className: "btn-ghost text-xs px-2 py-1 text-red-600", children: [a.jsx(cn, { className: "w-3 h-3" }), " Reject"] })
-                                    ]
-                                  }),
-                                f.is_featured
-                                  ? a.jsxs("button", {
-                                      onClick: () => w(f.id, f.status, !1),
-                                      disabled: h,
-                                      className: "btn-ghost text-xs px-2 py-1 text-amber-700 bg-amber-50 font-bold border border-amber-200",
-                                      children: [a.jsx(Tc, { className: "w-3 h-3 fill-amber-500 text-amber-500" }), " ❌ Remove from Top PRO"]
-                                    })
-                                  : a.jsxs("button", {
-                                      onClick: () => { setBoostTarget(f); setBoostUtr(""); },
-                                      disabled: h,
-                                      className: "btn-ghost text-xs px-2 py-1 text-amber-700 hover:bg-amber-50 font-bold border border-amber-200/80 rounded-lg",
-                                      children: [a.jsx(Tc, { className: "w-3 h-3 text-amber-500" }), " ⭐ Add to Top PRO"]
-                                    }),
-                                f.status === "active" &&
-                                  a.jsxs("button", { onClick: () => w(f.id, "unpublished"), disabled: h, className: "btn-ghost text-xs px-2 py-1 text-slate-700 bg-slate-100 hover:bg-slate-200 font-semibold rounded", children: [a.jsx(Cw, { className: "w-3 h-3" }), " Unpublish"] }),
-                                (f.status === "unpublished" || f.status === "rejected") &&
-                                  a.jsxs("button", { onClick: () => w(f.id, "active"), disabled: h, className: "btn-ghost text-xs px-2 py-1 text-green-700 bg-green-50 hover:bg-green-100 font-semibold rounded border border-green-200", children: [a.jsx(Nt, { className: "w-3 h-3" }), " Publish (Make Live)"] }),
-                                a.jsxs("button", { onClick: () => d(f.id), disabled: h, className: "btn-ghost text-xs px-2 py-1 text-error-600", children: [a.jsx(hn, { className: "w-3 h-3" }), " Delete"] })
+                                a.jsx("span", {
+                                  className: "text-sm font-extrabold text-primary-600",
+                                  children: Ze(item.price)
+                                }),
+                                item.condition && a.jsx("span", {
+                                  className: "text-[10px] font-semibold text-gray-500 uppercase bg-gray-100 px-1.5 py-0.5 rounded",
+                                  children: item.condition
+                                })
+                              ]
+                            }),
+
+                            // Seller & Contact Info
+                            a.jsxs("div", {
+                              className: "flex items-center gap-2 text-xs text-gray-600 flex-wrap font-medium",
+                              children: [
+                                a.jsxs("span", {
+                                  className: "text-gray-700 font-semibold inline-flex items-center gap-1",
+                                  children: [
+                                    "👤 ",
+                                    sellerName,
+                                    isProSeller && a.jsx("span", { className: "badge bg-primary-50 text-primary-600 ml-1 text-[10px]", children: "PRO" })
+                                  ]
+                                }),
+                                sellerEmail && a.jsxs("span", {
+                                  className: "text-[11px] font-semibold text-orange-800 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 inline-flex items-center gap-1",
+                                  children: [
+                                    a.jsx("span", { children: "✉️" }),
+                                    a.jsx("span", { className: "font-mono", children: sellerEmail })
+                                  ]
+                                }),
+                                (item.phone || item.whatsapp) && a.jsxs("span", {
+                                  className: "text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-flex items-center gap-1",
+                                  children: [
+                                    a.jsx("span", { children: "📞" }),
+                                    a.jsx("span", { className: "font-mono", children: item.phone || item.whatsapp })
+                                  ]
+                                })
+                              ]
+                            }),
+
+                            // Category, Location & Time
+                            a.jsxs("div", {
+                              className: "text-[11px] text-gray-400 flex items-center gap-1.5 flex-wrap pt-0.5",
+                              children: [
+                                a.jsxs("span", { children: ["🏷️ ", categoryName] }),
+                                a.jsx("span", { children: "•" }),
+                                a.jsxs("span", { children: ["📍 ", locationName] }),
+                                item.created_at && a.jsxs(a.Fragment, {
+                                  children: [
+                                    a.jsx("span", { children: "•" }),
+                                    a.jsx("span", { children: Ar(item.created_at) })
+                                  ]
+                                })
+                              ]
+                            })
+                          ]
+                        }),
+
+                        // Action Controls
+                        a.jsxs("div", {
+                          className: "flex items-center gap-1.5 pt-2 border-t border-gray-100 flex-wrap",
+                          children: [
+                            // Pending Moderation Buttons
+                            isPending && a.jsxs(a.Fragment, {
+                              children: [
+                                a.jsxs("button", {
+                                  onClick: () => handleUpdateStatus(item, "active"),
+                                  disabled: isProc,
+                                  className: "btn-ghost text-xs px-2.5 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-bold rounded-lg flex items-center gap-1",
+                                  children: [
+                                    a.jsx(Nt, { className: "w-3.5 h-3.5 text-emerald-600" }),
+                                    isProc ? "Saving..." : "Approve & Publish"
+                                  ]
+                                }),
+                                a.jsxs("button", {
+                                  onClick: () => handleUpdateStatus(item, "rejected"),
+                                  disabled: isProc,
+                                  className: "btn-ghost text-xs px-2.5 py-1 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 font-bold rounded-lg flex items-center gap-1",
+                                  children: [
+                                    a.jsx(cn, { className: "w-3.5 h-3.5 text-rose-600" }),
+                                    "Reject"
+                                  ]
+                                })
+                              ]
+                            }),
+
+                            // Active / Live listing controls
+                            isActive && a.jsxs("button", {
+                              onClick: () => handleUpdateStatus(item, "unpublished"),
+                              disabled: isProc,
+                              className: "btn-ghost text-xs px-2.5 py-1 text-slate-700 bg-slate-100 hover:bg-slate-200 font-semibold rounded-lg flex items-center gap-1",
+                              children: [
+                                a.jsx(Cw, { className: "w-3.5 h-3.5" }),
+                                "Unpublish / Pause"
+                              ]
+                            }),
+
+                            // Unpublished or Rejected listing can be re-published
+                            (isUnpublished || isRejected) && a.jsxs("button", {
+                              onClick: () => handleUpdateStatus(item, "active"),
+                              disabled: isProc,
+                              className: "btn-ghost text-xs px-2.5 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-bold rounded-lg flex items-center gap-1",
+                              children: [
+                                a.jsx(Nt, { className: "w-3.5 h-3.5 text-emerald-600" }),
+                                "Make Live"
+                              ]
+                            }),
+
+                            // Top PRO Toggle
+                            item.is_featured
+                              ? a.jsxs("button", {
+                                  onClick: () => handleUpdateStatus(item, undefined, false),
+                                  disabled: isProc,
+                                  className: "btn-ghost text-xs px-2.5 py-1 text-amber-800 bg-amber-50 hover:bg-amber-100 font-bold border border-amber-200 rounded-lg flex items-center gap-1",
+                                  children: [
+                                    a.jsx(Tc, { className: "w-3.5 h-3.5 fill-amber-500 text-amber-500" }),
+                                    "Remove from Top PRO"
+                                  ]
+                                })
+                              : a.jsxs("button", {
+                                  onClick: () => {
+                                    setBoostTarget(item);
+                                    setBoostUtr("");
+                                  },
+                                  disabled: isProc,
+                                  className: "btn-ghost text-xs px-2.5 py-1 text-amber-800 hover:bg-amber-50 font-bold border border-amber-200 rounded-lg flex items-center gap-1",
+                                  children: [
+                                    a.jsx(Tc, { className: "w-3.5 h-3.5 text-amber-500" }),
+                                    "⭐ Add to Top PRO"
+                                  ]
+                                }),
+
+                            // Delete button
+                            a.jsxs("button", {
+                              onClick: () => setDeleteTargetId(item.id),
+                              disabled: isProc,
+                              className: "btn-ghost text-xs px-2.5 py-1 text-rose-600 hover:bg-rose-50 font-bold rounded-lg flex items-center gap-1 ml-auto",
+                              children: [
+                                a.jsx(hn, { className: "w-3.5 h-3.5 text-rose-500" }),
+                                "Delete"
                               ]
                             })
                           ]
                         })
                       ]
-                    },
-                    f.id
-                  );
-                })
-              }),
-          a.jsx(An, {
-            open: !!u,
-            title: "Delete Listing?",
-            message: "This will permanently remove the listing.",
-            confirmLabel: "Delete",
-            onConfirm: j,
-            onCancel: () => d(null)
-          }),
-          boostTarget &&
-            a.jsx("div", {
-              className: "fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-150",
-              children: a.jsxs("div", {
-                className: "w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden text-gray-900 flex flex-col max-h-[90vh] overflow-y-auto",
-                children: [
-                  a.jsxs("div", {
-                    className: "p-4 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white flex items-center justify-between",
-                    children: [
-                      a.jsxs("div", {
-                        className: "flex items-center gap-2.5",
-                        children: [
-                          a.jsx("span", {
-                            className: "w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center font-black text-lg shadow-sm",
-                            children: "⭐"
-                          }),
-                          a.jsxs("div", {
-                            children: [
-                              a.jsx("h3", { className: "text-sm font-bold text-white", children: "Boost to Top PRO Listing" }),
-                              a.jsx("p", { className: "text-[11px] text-amber-300 font-medium", children: "Amount: ₹30 per ad post" })
-                            ]
-                          })
-                        ]
-                      }),
-                      a.jsx("button", {
-                        type: "button",
-                        onClick: () => setBoostTarget(null),
-                        className: "p-1.5 rounded-lg hover:bg-white/10 text-gray-300 text-sm font-bold",
-                        children: "✕"
-                      })
-                    ]
-                  }),
-                  a.jsxs("div", {
-                    className: "p-4 space-y-3.5",
-                    children: [
-                      a.jsxs("div", {
-                        className: "p-2.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2.5",
-                        children: [
-                          boostTarget.images && boostTarget.images[0]
-                            ? a.jsx("img", { src: boostTarget.images[0], alt: "", className: "w-12 h-12 rounded-lg object-cover border border-gray-200 shrink-0" })
-                            : a.jsx("div", { className: "w-12 h-12 rounded-lg bg-gray-200 text-gray-400 flex items-center justify-center text-xs shrink-0", children: "📷" }),
-                          a.jsxs("div", {
-                            className: "min-w-0 flex-1",
-                            children: [
-                              a.jsx("p", { className: "text-xs font-bold text-gray-900 truncate", children: boostTarget.title }),
-                              a.jsx("p", { className: "text-xs font-bold text-primary-600 mt-0.5", children: Ze(boostTarget.price) })
-                            ]
-                          })
-                        ]
-                      }),
-                      a.jsxs("div", {
-                        className: "bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-center",
-                        children: [
-                          a.jsx("p", { className: "text-xs font-bold text-amber-950", children: "Scan UPI QR or Pay ₹30" }),
-                          a.jsx("p", { className: "text-[11px] text-amber-800 mt-0.5", children: "Pay using GPay, PhonePe, Paytm or any UPI App" }),
-                          a.jsx("div", {
-                            className: "my-2.5 flex justify-center",
-                            children: a.jsx("img", {
-                              src: boostQrSrc,
-                              alt: "UPI QR Code",
-                              className: "w-36 h-36 rounded-lg border-2 border-amber-300 shadow-sm bg-white p-1.5"
-                            })
-                          }),
-                          a.jsxs("div", {
-                            className: "flex items-center justify-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-amber-200 max-w-xs mx-auto",
-                            children: [
-                              a.jsx("span", { className: "text-[11px] text-gray-500 font-medium", children: "UPI ID:" }),
-                              a.jsx("span", { className: "text-xs font-mono font-bold text-gray-900", children: boostUpiId }),
-                              a.jsx("button", {
-                                type: "button",
-                                onClick: () => {
-                                  navigator.clipboard && navigator.clipboard.writeText(boostUpiId);
-                                  e.show("UPI ID copied!", "success");
-                                },
-                                className: "text-[11px] text-primary-600 font-bold ml-1 hover:underline",
-                                children: "Copy"
-                              })
-                            ]
-                          })
-                        ]
-                      }),
-                      a.jsxs("div", {
-                        className: "grid grid-cols-2 gap-2",
-                        children: [
-                          a.jsx("a", { href: "phonepe://pay?pa=" + encodeURIComponent(boostUpiId) + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing", className: "p-2 text-center rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-800 font-bold text-xs flex items-center justify-center gap-1", children: "PhonePe" }),
-                          a.jsx("a", { href: "tez://upi/pay?pa=" + encodeURIComponent(boostUpiId) + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing", className: "p-2 text-center rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 font-bold text-xs flex items-center justify-center gap-1", children: "Google Pay" }),
-                          a.jsx("a", { href: "paytmmp://pay?pa=" + encodeURIComponent(boostUpiId) + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing", className: "p-2 text-center rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 font-bold text-xs flex items-center justify-center gap-1", children: "Paytm" }),
-                          a.jsx("a", { href: "upi://pay?pa=" + encodeURIComponent(boostUpiId) + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing", className: "p-2 text-center rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs flex items-center justify-center gap-1", children: "Other UPI" })
-                        ]
-                      }),
-                      a.jsxs("div", {
-                        className: "space-y-1.5",
-                        children: [
-                          a.jsx("label", { className: "text-xs font-bold text-gray-800", children: "Enter Payment UTR / Transaction ID *" }),
-                          a.jsx("input", {
-                            type: "text",
-                            value: boostUtr,
-                            onChange: t => setBoostUtr(t.target.value),
-                            placeholder: "e.g. 423589123456 (12 digits)",
-                            className: "w-full px-3 py-2 text-xs rounded-xl border border-gray-300 focus:outline-hidden focus:ring-2 focus:ring-amber-500 font-mono"
-                          }),
-                          a.jsx("p", { className: "text-[10px] text-gray-500", children: "Found in your UPI app payment receipt / details" })
-                        ]
-                      }),
-                      a.jsxs("div", {
-                        className: "pt-2 flex items-center gap-2",
-                        children: [
-                          a.jsx("button", {
-                            type: "button",
-                            onClick: () => setBoostTarget(null),
-                            className: "flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-semibold text-xs hover:bg-gray-50",
-                            children: "Cancel"
-                          }),
-                          a.jsxs("button", {
-                            type: "button",
-                            disabled: !boostUtr.trim() || isSubmittingBoost,
-                            onClick: async () => {
-                              if (!boostUtr.trim()) {
-                                e.show("Please enter 12-digit UTR ID", "error");
-                                return;
-                              }
-                              setIsSubmittingBoost(!0);
-                              try {
-                                const sellerId = boostTarget.seller_id || boostTarget.user_id || boostTarget.seller?.id || "";
-                                const sellerEmail = boostTarget.seller_email || (boostTarget.seller && boostTarget.seller.email) || "";
-                                const sellerName = boostTarget.seller_name || (boostTarget.seller && boostTarget.seller.name) || "";
-                                await Q1({
-                                  plan_id: "plan_single_top_pro",
-                                  amount: 30,
-                                  utr: boostUtr.trim(),
-                                  payment_proof_url: "",
-                                  user_id: sellerId,
-                                  user_email: sellerEmail,
-                                  user_name: sellerName,
-                                  listing_id: boostTarget.id,
-                                  listing_title: boostTarget.title || "Top PRO Listing",
-                                  listing_image: (boostTarget.images && boostTarget.images[0]) || "",
-                                  price: boostTarget.price
-                                });
-                                setBoostTarget(null);
-                                setBoostUtr("");
-                                e.show("Payment submitted! Ad will be boosted to top.", "success");
-                              } catch (err) {
-                                setBoostTarget(null);
-                                setBoostUtr("");
-                                e.show("Payment submitted! Ad will be boosted to top.", "success");
-                              } finally {
-                                setIsSubmittingBoost(!1);
-                              }
-                            },
-                            className: "flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-bold text-xs shadow-md disabled:opacity-50 flex items-center justify-center gap-1.5",
-                            children: [
-                              isSubmittingBoost ? a.jsx("span", { children: "Submitting..." }) : a.jsxs(a.Fragment, { children: [a.jsx("span", { children: "Submit UTR (₹30)" }), a.jsx("span", { children: "✓" })] })
-                            ]
-                          })
-                        ]
-                      })
-                    ]
-                  })
-                ]
-              })
+                    })
+                  ]
+                },
+                itemId
+              );
             })
+          }),
+
+      // Pagination controls
+      totalPages > 1 && a.jsxs("div", {
+        className: "flex items-center justify-between pt-4 border-t border-gray-100 flex-wrap gap-2",
+        children: [
+          a.jsxs("p", {
+            className: "text-xs text-gray-500 font-medium",
+            children: [
+              "Showing ",
+              (safePage - 1) * PAGE_SIZE + 1,
+              " to ",
+              Math.min(safePage * PAGE_SIZE, totalItems),
+              " of ",
+              totalItems,
+              " listings"
+            ]
+          }),
+          a.jsxs("div", {
+            className: "flex items-center gap-1.5",
+            children: [
+              a.jsx("button", {
+                onClick: () => setCurrentPage((p) => Math.max(1, p - 1)),
+                disabled: safePage <= 1,
+                className: "btn-outline text-xs px-3 py-1 font-semibold disabled:opacity-40",
+                children: "← Previous"
+              }),
+              a.jsxs("span", {
+                className: "text-xs font-bold text-gray-700 px-2",
+                children: ["Page ", safePage, " of ", totalPages]
+              }),
+              a.jsx("button", {
+                onClick: () => setCurrentPage((p) => Math.min(totalPages, p + 1)),
+                disabled: safePage >= totalPages,
+                className: "btn-outline text-xs px-3 py-1 font-semibold disabled:opacity-40",
+                children: "Next →"
+              })
+            ]
+          })
         ]
-      });
+      }),
+
+      // Delete confirmation modal
+      a.jsx(An, {
+        open: !!deleteTargetId,
+        title: "Delete Listing Permanently?",
+        message: "This will permanently remove the listing from all devices. This action cannot be undone.",
+        confirmLabel: "Delete",
+        onConfirm: handleDeleteConfirm,
+        onCancel: () => setDeleteTargetId(null)
+      }),
+
+      // Boost to Top PRO modal
+      boostTarget && a.jsx("div", {
+        className: "fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-150",
+        children: a.jsxs("div", {
+          className: "w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden text-gray-900 flex flex-col max-h-[90vh] overflow-y-auto",
+          children: [
+            // Modal header
+            a.jsxs("div", {
+              className: "p-4 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white flex items-center justify-between",
+              children: [
+                a.jsxs("div", {
+                  className: "flex items-center gap-2.5",
+                  children: [
+                    a.jsx("span", {
+                      className: "w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center font-black text-lg shadow-sm",
+                      children: "⭐"
+                    }),
+                    a.jsxs("div", {
+                      children: [
+                        a.jsx("h3", { className: "text-sm font-bold text-white", children: "Boost to Top PRO Listing" }),
+                        a.jsx("p", { className: "text-[11px] text-amber-300 font-medium", children: "Amount: ₹30 per ad post" })
+                      ]
+                    })
+                  ]
+                }),
+                a.jsx("button", {
+                  type: "button",
+                  onClick: () => setBoostTarget(null),
+                  className: "p-1.5 rounded-lg hover:bg-white/10 text-gray-300 text-sm font-bold",
+                  children: "✕"
+                })
+              ]
+            }),
+
+            // Modal body
+            a.jsxs("div", {
+              className: "p-4 space-y-3.5",
+              children: [
+                // Item preview
+                a.jsxs("div", {
+                  className: "p-2.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2.5",
+                  children: [
+                    getListingImage(boostTarget)
+                      ? a.jsx("img", {
+                          src: getListingImage(boostTarget),
+                          alt: "",
+                          className: "w-12 h-12 rounded-lg object-cover border border-gray-200 shrink-0"
+                        })
+                      : a.jsx("div", {
+                          className: "w-12 h-12 rounded-lg bg-gray-200 text-gray-400 flex items-center justify-center text-xs shrink-0",
+                          children: "📷"
+                        }),
+                    a.jsxs("div", {
+                      className: "min-w-0 flex-1",
+                      children: [
+                        a.jsx("p", { className: "text-xs font-bold text-gray-900 truncate", children: boostTarget.title || "Top PRO Listing" }),
+                        a.jsx("p", { className: "text-xs font-bold text-primary-600 mt-0.5", children: Ze(boostTarget.price) })
+                      ]
+                    })
+                  ]
+                }),
+
+                // QR payment box
+                a.jsxs("div", {
+                  className: "bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-center",
+                  children: [
+                    a.jsx("p", { className: "text-xs font-bold text-amber-950", children: "Scan UPI QR or Pay ₹30" }),
+                    a.jsx("p", { className: "text-[11px] text-amber-800 mt-0.5", children: "Pay using GPay, PhonePe, Paytm or any UPI App" }),
+                    a.jsx("div", {
+                      className: "my-2.5 flex justify-center",
+                      children: a.jsx("img", {
+                        src: boostQrSrc,
+                        alt: "UPI QR Code",
+                        className: "w-36 h-36 rounded-lg border-2 border-amber-300 shadow-sm bg-white p-1.5"
+                      })
+                    }),
+                    a.jsxs("div", {
+                      className: "flex items-center justify-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-amber-200 max-w-xs mx-auto",
+                      children: [
+                        a.jsx("span", { className: "text-[11px] text-gray-500 font-medium", children: "UPI ID:" }),
+                        a.jsx("span", { className: "text-xs font-mono font-bold text-gray-900", children: boostUpiId }),
+                        a.jsx("button", {
+                          type: "button",
+                          onClick: () => {
+                            if (navigator.clipboard) navigator.clipboard.writeText(boostUpiId);
+                            if (toastRef.current) toastRef.current.show("UPI ID copied!", "success");
+                          },
+                          className: "text-[11px] text-primary-600 font-bold ml-1 hover:underline",
+                          children: "Copy"
+                        })
+                      ]
+                    })
+                  ]
+                }),
+
+                // Direct UPI Apps
+                a.jsxs("div", {
+                  className: "grid grid-cols-2 gap-2",
+                  children: [
+                    a.jsx("a", {
+                      href: "phonepe://pay?pa=" + encodeURIComponent(boostUpiId) + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing",
+                      className: "p-2 text-center rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-800 font-bold text-xs flex items-center justify-center gap-1",
+                      children: "PhonePe"
+                    }),
+                    a.jsx("a", {
+                      href: "tez://upi/pay?pa=" + encodeURIComponent(boostUpiId) + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing",
+                      className: "p-2 text-center rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 font-bold text-xs flex items-center justify-center gap-1",
+                      children: "Google Pay"
+                    }),
+                    a.jsx("a", {
+                      href: "paytmmp://pay?pa=" + encodeURIComponent(boostUpiId) + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing",
+                      className: "p-2 text-center rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 font-bold text-xs flex items-center justify-center gap-1",
+                      children: "Paytm"
+                    }),
+                    a.jsx("a", {
+                      href: "upi://pay?pa=" + encodeURIComponent(boostUpiId) + "&pn=Meri%20Local%20Bazaar&am=30&cu=INR&tn=Top%20PRO%20Listing",
+                      className: "p-2 text-center rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs flex items-center justify-center gap-1",
+                      children: "Other UPI"
+                    })
+                  ]
+                }),
+
+                // UTR input
+                a.jsxs("div", {
+                  className: "space-y-1.5",
+                  children: [
+                    a.jsx("label", { className: "text-xs font-bold text-gray-800", children: "Enter Payment UTR / Transaction ID *" }),
+                    a.jsx("input", {
+                      type: "text",
+                      value: boostUtr,
+                      onChange: (e) => setBoostUtr(e.target.value),
+                      placeholder: "e.g. 423589123456 (12 digits)",
+                      className: "w-full px-3 py-2 text-xs rounded-xl border border-gray-300 focus:outline-hidden focus:ring-2 focus:ring-amber-500 font-mono"
+                    }),
+                    a.jsx("p", { className: "text-[10px] text-gray-500", children: "Found in your UPI app payment receipt / details" })
+                  ]
+                }),
+
+                // Submit Buttons
+                a.jsxs("div", {
+                  className: "pt-2 flex items-center gap-2",
+                  children: [
+                    a.jsx("button", {
+                      type: "button",
+                      onClick: () => setBoostTarget(null),
+                      className: "flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-semibold text-xs hover:bg-gray-50",
+                      children: "Cancel"
+                    }),
+                    a.jsxs("button", {
+                      type: "button",
+                      disabled: !boostUtr.trim() || isSubmittingBoost,
+                      onClick: handleBoostSubmit,
+                      className: "flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-bold text-xs shadow-md disabled:opacity-50 flex items-center justify-center gap-1.5",
+                      children: [
+                        isSubmittingBoost
+                          ? a.jsx("span", { children: "Submitting..." })
+                          : a.jsxs(a.Fragment, {
+                              children: [
+                                a.jsx("span", { children: "Submit UTR (₹30)" }),
+                                a.jsx("span", { children: "✓" })
+                              ]
+                            })
+                      ]
+                    })
+                  ]
+                })
+              ]
+            })
+          ]
+        })
+      })
+    ]
+  });
 }
 function pj({ onRefresh }) {
   const toast = he(),
